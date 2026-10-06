@@ -1,0 +1,4801 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A Tasca do Zé: A Marosca Perpétua</title>
+  <style>
+    :root {
+      --blue: #241910;
+      --cyan: #e7c27a;
+      --yellow: #f3d7a1;
+      --white: #f6efe2;
+      --gray: #f3e6c8;
+      --dark: #8d6b45;
+      --black: #2a2118;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #070707;
+      color: var(--white);
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+    }
+
+    #monitor {
+      width: min(1080px, 100vw);
+      height: min(860px, 100vh);
+      background: linear-gradient(180deg, #3a3a3a, #1b1b1b);
+      padding: 16px 16px 10px;
+      border-radius: 22px;
+      box-shadow: 0 24px 70px #000, inset 0 0 0 2px #111;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #crt {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      background: var(--blue);
+      overflow: hidden;
+      border-radius: 14px 14px 18px 18px;
+      box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.45);
+    }
+
+    #ui {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      overflow: hidden;
+      padding: 8px 12px 8px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #scan, #glow {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    #scan {
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.05) 0px,
+        rgba(0, 0, 0, 0.05) 1px,
+        transparent 2px,
+        transparent 6px
+      );
+      opacity: 0.12;
+      animation: flicker 4.5s infinite;
+    }
+
+    #glow {
+      background:
+        linear-gradient(90deg, rgba(255, 0, 70, 0.06), transparent 18%, transparent 82%, rgba(0, 255, 255, 0.07)),
+        radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+      mix-blend-mode: multiply;
+    }
+
+    #brand {
+      text-align: center;
+      color: #8d8d8d;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      padding: 7px 0 2px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+      border-bottom: 2px solid var(--white);
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      color: var(--yellow);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    #day {
+      color: var(--cyan);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    #objective {
+      min-height: 1.3em;
+      color: var(--yellow);
+      margin: 3px 0 4px;
+      font-size: 14px;
+    }
+
+    #objective.ready {
+      color: #ff5555;
+      animation: pulse 0.7s steps(2) infinite;
+    }
+
+    #objective {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #meters {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px 8px;
+      margin-bottom: 4px;
+    }
+
+    .meter { font-size: 12px; min-width: 0; }
+    .meter .k { color: var(--cyan); display: inline; white-space: nowrap; overflow: hidden; margin-right: 6px; }
+    .meter .v { color: var(--white); display: inline; }
+
+    .track {
+      display: block;
+      height: 8px;
+      margin-top: 2px;
+      background: #3a2a22;
+      border: 0;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .fill { display: block; height: 100%; width: 0; transition: width 0.35s ease; border-radius: 99px; }
+    .meter.y .fill { background: #e6b84a; }
+    .meter.r .fill { background: #e15d4c; }
+    .meter.g .fill { background: #67b36a; }
+    .meter.c .fill { background: #5eb8c9; }
+    .meter.m .fill { background: #c96eb8; }
+
+    #nav[hidden] { display: none !important; }
+    #nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    #nav button {
+      font: inherit;
+      font-size: 13px;
+      background: var(--gray);
+      color: var(--black);
+      border: 1px solid #c8ae86;
+      border-radius: 8px;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+
+    #nav button.on { background: var(--yellow); }
+    #nav button:disabled { background: var(--dark); color: #777; cursor: default; }
+
+    #stage {
+      flex: 0 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #screen {
+      position: relative;
+      flex: 0 0 auto;
+      height: auto;
+      min-height: 0;
+      background: #000;
+      line-height: 0;
+      border: 2px solid var(--cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #view {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      display: block;
+      background: #1a120e;
+      cursor: pointer;
+    }
+
+    #copy {
+      flex: 0 0 auto;
+      border: 2px solid var(--yellow);
+      background: #2a1c14;
+      border-radius: 8px;
+      min-height: 0;
+      max-height: 3.4em;
+      overflow: hidden;
+      margin-top: 6px;
+      padding: 5px 8px;
+    }
+
+    #copy h2 {
+      margin: 0;
+      color: var(--yellow);
+      font-size: 15px;
+      display: inline;
+    }
+
+    #copy p { margin: 0 0 0 8px; line-height: 1.35; display: inline; }
+    #copy .sub { color: var(--cyan); }
+    #copy .dim { color: #cccccc; }
+    #copy.more { cursor: pointer; }
+
+    #choices {
+      display: flex;
+      flex-wrap: wrap;
+      flex: 0 0 auto;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    #choices button, #foot button {
+      font: inherit;
+      text-align: center;
+      background: var(--gray);
+      color: var(--black);
+      border: 1px solid #c8ae86;
+      border-radius: 8px;
+      padding: 7px 8px;
+      cursor: pointer;
+      flex: 1 1 120px;
+    }
+
+    #choices button:hover:not(:disabled),
+    #nav button:hover:not(:disabled),
+    #foot button:hover {
+      background: var(--yellow);
+    }
+
+    #choices button:disabled {
+      background: #444;
+      color: #999;
+      cursor: not-allowed;
+    }
+
+    #foot button { flex: 0 0 auto; padding: 4px 8px; font-size: 13px; }
+
+    #foot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      flex: 0 0 auto;
+      margin-top: 6px;
+      color: var(--cyan);
+      font-size: 13px;
+    }
+
+    #foot button { padding: 4px 8px; font-size: 13px; }
+
+    button:focus-visible {
+      outline: 2px solid var(--yellow);
+      outline-offset: 2px;
+    }
+
+    .shake { animation: shake 0.45s linear; }
+
+    @keyframes flicker {
+      0%, 97%, 100% { opacity: 1; }
+      98% { opacity: 0.82; }
+      99% { opacity: 0.94; }
+    }
+
+    @keyframes pulse {
+      from { opacity: 1; }
+      to { opacity: 0.45; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-3px); }
+      40% { transform: translateX(3px); }
+      60% { transform: translateX(-2px); }
+      80% { transform: translateX(2px); }
+    }
+
+    @media (max-width: 800px) {
+      #monitor {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        padding: 8px 8px 6px;
+      }
+      #meters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      #ui { padding: 8px 10px 12px; }
+      h1 { font-size: 16px; }
+      #choices button { flex: 1 1 42%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #scan, #objective.ready, .shake { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="monitor">
+    <div id="crt">
+      <div id="ui">
+        <header>
+          <h1>A TASCA DO ZÉ</h1>
+          <div id="day">noite</div>
+        </header>
+        <div id="objective" hidden></div>
+        <section id="meters" hidden></section>
+        <nav id="nav" hidden></nav>
+        <div id="stage">
+          <div id="screen">
+            <canvas id="view" width="960" height="540"></canvas>
+          </div>
+          <div id="copy" aria-live="polite"></div>
+        </div>
+        <div id="choices"></div>
+        <div id="foot"></div>
+      </div>
+      <div id="scan"></div>
+      <div id="glow"></div>
+    </div>
+    <div id="brand">O PICA-PAU · ALDEIA · SEM FACTURA</div>
+  </div>
+  <script>
+    const SAVE_KEY = "tasca-do-ze-marosca-v1";
+    const C = {
+      K: "#000000", B: "#0000aa", G: "#00aa00", C: "#00aaaa",
+      R: "#aa0000", M: "#aa00aa", N: "#aa5500", L: "#aaaaaa",
+      D: "#555555", b: "#5555ff", g: "#55ff55", c: "#55ffff",
+      r: "#ff5555", m: "#ff55ff", Y: "#ffff55", W: "#ffffff"
+    };
+
+    const RULES = {
+      interest: 0.07,
+      interestMin: 10,
+      tax: 0.05,
+      listenPat: 10,
+      kickPat: 12,
+      kickRep: -6,
+      hospital: 120,
+      bribeCost: 90,
+      bribeDays: 3,
+      licenseCost: 35,
+      gnrCash: 75,
+      gossipPrice: 25
+    };
+
+    const PLACES = [
+      { id: "tasca", nav: "Tasca", title: "O Pica-Pau" },
+      { id: "garagem", nav: "Garagem", title: "Garagem do Zequinha" },
+      { id: "junta", nav: "Junta", title: "Junta de Freguesia" },
+      { id: "feira", nav: "Feira", title: "Feira e mercado" },
+      { id: "matos", nav: "Sr. Matos", title: "Casa do Sr. Matos" },
+      { id: "gnr", nav: "GNR", title: "Posto da GNR" }
+    ];
+
+    const LEGAL = {
+      imperial: { name: "Grade de imperiais", short: "imperiais", buy: 7, pack: 6, sell: 3 },
+      bagaco: { name: "Garrafão de bagaço", short: "bagaços", buy: 10, pack: 4, sell: 5 },
+      tremocos: { name: "Balde de tremoços", short: "tremoços", buy: 4, pack: 10, sell: 2 },
+      vinho: { name: "Caixa de vinho de mesa", short: "vinhos", buy: 12, pack: 4, sell: 6 },
+      presunto: { name: "Presunto de oferta", short: "presuntos", buy: 15, pack: 2, sell: 0 }
+    };
+
+    const ILLEGAL = {
+      vinho: { name: "Barril de vinho batizado", short: "doses de vinho batizado", buy: 42, pack: 6, sell: 20, heat: 6, sick: 1 },
+      cigarros: { name: "Cigarros sem estampilha", short: "maços sem estampilha", buy: 28, pack: 8, sell: 12, heat: 4, sick: 0.4 },
+      carne: { name: "Carne sem carimbo", short: "doses de carne sem carimbo", buy: 36, pack: 4, sell: 26, heat: 9, sick: 1.6 }
+    };
+
+    const SLOT = { name: "Máquina de slots ilegal", buy: 260, income: 22, heat: 7 };
+
+    const SCRIPT_GOALS = [
+      {
+        id: "bilhar",
+        title: "Comprar um bilhar decente",
+        cost: 2000,
+        pitch: "O Pica-Pau sem bilhar é um corredor com moscas. A aldeia quer tacadas, giz e uma desculpa para não ir para casa.",
+        disaster: "No brinde da inauguração, o tecto — que já era mais uma sugestão do que uma estrutura — veio abaixo em cima do bilhar. O pano verde ficou com um buraco do tamanho do Padre Custódio. O estucador, o seguro que não existia e a vergonha comeram o sonho."
+      },
+      {
+        id: "parede",
+        title: "Deitar a parede abaixo",
+        cost: 6000,
+        pitch: "A parede do fundo só serve para esconder humidade e o primo. Abaixo com ela: mais mesas, mais imperial, mais futuro.",
+        disaster: "Deitaste a parede. Do outro lado não estava o futuro: estava a sala da Dona Albertina, que não era arrecadação, era a casa dela. Ficaste com um salão enorme e um processo por invasão de domicílio. Os advogados levaram tudo menos o cheiro a tremoço."
+      },
+      {
+        id: "esplanada",
+        title: "Meter esplanada na rua",
+        cost: 15000,
+        pitch: "Umas mesas lá fora, uns guardas-sóis, e o Pica-Pau passa a ter ar de sítio para onde os betos vêm tirar fotografias.",
+        disaster: "A esplanada durou uma tarde e dois pastéis de nata. A Câmara levou os guardas-sóis, um burro comeu o menu plastificado, e a multa de ocupação da via pública chegou assinada por alguém que jantou à borla. O passeio voltou a ser passeio. A carteira voltou a ser um boato."
+      },
+      {
+        id: "vip",
+        title: "Abrir a sala VIP de jogo ilegal",
+        cost: 35000,
+        pitch: "Uma porta com cortina, umas slots a sério e a sueca a dinheiro. Chama-se VIP para ninguém dizer garagem com toalha.",
+        disaster: "A inauguração teve bolo, fumo e o Bispo, que jurava que estava só a ver. A ASAE entrou no exacto momento em que ele pedia trunfo. Levaram as cartas, as slots e a tua liquidez. O Bispo levou a bênção e deixou-te a ti com a acta."
+      },
+      {
+        id: "discoteca",
+        title: "Licença de discoteca",
+        cost: 80000,
+        pitch: "Se a tasca não chega a rica, que chegue a barulhenta. Licença, colunas e um letreiro que pisca até o sono desistir.",
+        disaster: "A coluna acordou o cemitério. O Padre Custódio exigiu exorcismo pago à cabeça, a GNR exigiu auto, e a Junta exigiu uma taxa de ruído com o nome de contributo cultural. A discoteca durou um refrão. O refrão ficou-te na dívida."
+      }
+    ];
+
+    const ABSURD_GOALS = [
+      {
+        title: "Pista de gelo na esplanada",
+        pitch: "O ribeiro no inverno não chega. Queres gelo, patins e imperial servida de luvas.",
+        disaster: "A pista derreteu em onze minutos. A água levou o bagaço, a instalação eléctrica e um cliente que não sabia nadar mas sabia gritar. A EDP e o padre apresentaram facturas do mesmo tamanho."
+      },
+      {
+        title: "Satélite no telhado para ver o Benfica",
+        pitch: "A aldeia merece imagem. O telhado merece uma antena maior do que o juízo.",
+        disaster: "O satélite apanhou o jogo errado, o telhado apanhou o raio, e o Benfica perdeu na mesma. O pára-raios era alumínio do Zequinha, com garantia até à porta da garagem."
+      },
+      {
+        title: "Comprar a freguesia do lado",
+        pitch: "Se não podes com a Junta, compra a junta ao lado. Parece um plano até se abrir o mapa.",
+        disaster: "Compraste a freguesia do lado. O lado, visto do outro lado do ribeiro, era esta. Pagaste duas vezes a mesma aldeia. O notário chamou-lhe consolidação e cobrou como se fosse um país."
+      },
+      {
+        title: "Elevar o Pica-Pau a património",
+        pitch: "Já que não dá lucro, que dê placa. A humanidade que venha provar o tinto.",
+        disaster: "A comissão veio, provou o vinho e classificou a tasca como património em risco imediato. A taxa de classificação, o jantar da comissão e a placa de latão comeram o saldo. A placa ficou torta."
+      },
+      {
+        title: "Meter o Sr. Matos como sócio honorário",
+        pitch: "Se não o podes pagar, mete-o na sociedade. Os homens de negócios chamam a isto visão.",
+        disaster: "Ele aceitou. Como sócio maioritário. A tua parte é lavar copos, sorrir e continuar a dever. O contrato foi lido em voz alta pelos capangas, que não são tabeliães mas têm presença."
+      },
+      {
+        title: "Construir uma marina no ribeiro",
+        pitch: "Quarenta centímetros de água chegam se a ambição for funda e a capitania estiver distraída.",
+        disaster: "A marina é um barco insuflável amarrado a um chapéu de sol. A capitania apareceu — nem é a desta bacia, mas vieram na mesma — e a multa tem mais páginas do que o ribeiro tem profundidade."
+      }
+    ];
+
+    const RUIN = {
+      bilhar: "O bilhar está encostado à parede, com o pano rasgado e uma bola em cima de uma cadeira. É arte ou é lixo, depende de quem autua.",
+      parede: "Onde havia parede há um lençol e a Dona Albertina a olhar-te como quem já ligou ao primo advogado.",
+      esplanada: "Lá fora ficou um gancho de guarda-sol e uma cadeira que a Câmara não quis.",
+      vip: "A cortina da sala VIP ainda está no sítio. A sala, essa, voltou a ser arrecadação com vergonha.",
+      discoteca: "O letreiro pisca a palavra DISC sem o resto. Parece um pedido de ajuda."
+    };
+
+    const PEOPLE = [
+      {
+        id: "albertina",
+        name: "Dona Albertina",
+        sprite: "mulher",
+        enter: [
+          "A Dona Albertina entra sem bater, porque a porta, segundo ela, é um conceito. Traz um caderno maior do que o teu e o casaco dos domingos.",
+          "«Ó Zé, não venho beber, venho informar. Beber é o que acontece enquanto a informação assenta.»"
+        ],
+        listen: "Aturas o relatório da rua. No meio da conta da luz e do caso do gato, ela aponta as horas: o carro da Câmara sai às terças e não vai a nenhuma obra.",
+        palha: "Serves um bagaço curto e acenas como quem ouve. Ela não se ofende: ofensa, para a Albertina, é não lhe dares matéria-prima.",
+        marosca: "Empurras-lhe um produto que não devia estar num copo. Ela bebe, fecha os olhos e diz que isto vai dar conversa. Vai dar, sim. No centro de saúde, se correr mal.",
+        kick: "Corres-lhe com a vassoura. Ela sai a anunciar à rua que o Zé se passou e que a tasca cheira a desespero. A rua acredita, porque a rua está aborrecida.",
+        gossip: {
+          id: "carro-camara",
+          tag: "junta",
+          worksOn: ["presidente"],
+          title: "O carro da Câmara vai ao engate",
+          text: "O Presidente Hilário usa o carro da Junta para ir ao engate, terças à noite, com o pisca avariado de propósito para parecer discrição."
+        }
+      },
+      {
+        id: "sueca",
+        name: "Sr. António, o Velho da Sueca",
+        sprite: "velho",
+        enter: [
+          "O Sr. António senta-se como quem ocupa território. As cartas vão para cima da mesa antes do copo, que é a ordem natural das coisas.",
+          "«Dá-me um bagaço, Zé. A minha mulher diz que eu já não ganho uma mão. Ela é que baralha, mas isso não se prova.»"
+        ],
+        listen: "Aguentas a saga da sueca de 1987. Entre um trunfo e uma queixa ao universo, ele conta que o cabo da GNR joga em serviço com o talhante.",
+        palha: "Serves curto e dizes «pois». Ele não repara. Está a reviver uma vaza em que o ás ainda significava alguma coisa.",
+        marosca: "O vinho que lhe serves teve uma infância complicada. Ele chama-lhe colheita com personalidade. A personalidade é de farmácia.",
+        kick: "Mandas-lhe as cartas para o colo e a vassoura para o caminho. Ele grita que isto é perseguição política ao ás de copas.",
+        gossip: {
+          id: "sueca-posto",
+          tag: "gnr",
+          worksOn: [],
+          title: "Sueca no turno da noite",
+          text: "O cabo da GNR joga sueca em serviço com o talhante. Se alguém perguntar, o baralho é material apreendido."
+        }
+      },
+      {
+        id: "cripto",
+        name: "Ricardo, o Mitra do Crypto",
+        sprite: "cripto",
+        enter: [
+          "Entra um rapaz com uns auscultadores ao pescoço e a certeza de que a aldeia é uma startup que ainda não percebeu.",
+          "«Zé, isto da imperial é só enquanto a rede confirma. Eu estou a descentralizar o conceito de tasca.»"
+        ],
+        listen: "Deixas-o explicar a blockchain com tremoços. No meio do sermão, admite que escreveu as doze palavras num guardanapo. A Albertina usou-o para o azeite.",
+        palha: "Pões-lhe a imperial à frente e dizes que o copo é o token. Ele ri, paga, e acha que foste tu que percebeste. Não percebeste. Recebeste.",
+        marosca: "Vendes-lhe um esquema líquido. Ele pergunta se tem whitepaper. Dizes que o whitepaper é a ressaca. Ele acha profundo e paga a mais.",
+        kick: "Dizes-lhe que aqui a única cadeia é a de urinol. Ele sai a filmar, a chamar-te gatekeeper. A reputação desce na vida real, que ainda conta.",
+        gossip: {
+          id: "seed-guardanapo",
+          tag: "feira",
+          worksOn: [],
+          title: "A seed no guardanapo",
+          text: "O mitra do crypto escreveu a frase secreta no guardanapo do Pica-Pau. A Dona Albertina limpou azeite com ela. Há um homem a chorar no grupo da aldeia."
+        }
+      },
+      {
+        id: "fiscal",
+        name: "O Senhor de Gabardine",
+        sprite: "farda",
+        enter: [
+          "Entra um homem que pede a ementa com demasiado interesse para quem só quer um tinto. O gabardine não é da terra. O bloco também não.",
+          "Cheira a sabonete de hotel e a pergunta com ratoeira. Senta-se de frente para a cave, não para a televisão."
+        ],
+        listen: "Aturas perguntas sobre fornecedores, temperaturas e o nome do cão da vizinha. O cão interessa-lhe demais. Quando ele se trai, percebes: é inspecção, e tem medo de ladrar.",
+        palha: "Serves vinho de mesa e a factura, toda a factura, com NIF e um sorriso de quem dorme de consciência leve e carteira triste.",
+        marosca: "Serves-lhe o que não se serve. Suaste vinho. Ele sorri como quem já escreveu a multa no bloco antes de se sentar.",
+        kick: "Mandas o gabardine para a rua. Ele não corre: aponta. Correr um fiscal é bom para o fígado e péssimo para o calor.",
+        gossip: {
+          id: "fobia-caes",
+          tag: "gnr",
+          worksOn: ["fiscal"],
+          title: "O inspetor tem fobia a cães",
+          text: "O inspetor da ASAE não entra onde haja cão. Um latido à porta desfaz-lhe o bloco, a postura e metade da multa."
+        }
+      },
+      {
+        id: "beto",
+        name: "Gonçalo, o Beto da Cidade",
+        sprite: "beto",
+        enter: [
+          "O Gonçalo entra de óculos escuros com o tempo nublado, que é a definição clínica de beto. Pede «qualquer coisa artesanal».",
+          "«Na cidade isto chamava-se conceito. Aqui chama-se tasca, pois não? Adorável. Tem Wi-Fi?»"
+        ],
+        listen: "Ouves a saga do lagar do avô, que ele visitou uma vez em 2009. No fim admite que pediu fiado no talho em nome do Pica-Pau.",
+        palha: "Serves imperial e dizes que é edição limitada, limitada à grade. Ele fotografa o copo. O copo não sai na fotografia, mas o dinheiro fica.",
+        marosca: "Vendes-lhe autenticidade falsa a preço de cidade. Ele chama-lhe terroir. O terroir pode mandá-lo ao hospital com uma história muito partilhável.",
+        kick: "Dizes-lhe que o conceito acabou e a vassoura começou. Ele ameaça uma crítica. A aldeia não lê a crítica, mas vê-o sair e comenta.",
+        gossip: {
+          id: "fiado-talho",
+          tag: "feira",
+          worksOn: [],
+          title: "O beto fez fiado em teu nome",
+          text: "O Gonçalo pediu fiado no talho dizendo que era para a cozinha do Pica-Pau. A aldeia acha que a dívida é tua."
+        }
+      },
+      {
+        id: "presidente",
+        name: "Presidente Hilário, bêbado",
+        sprite: "presidente",
+        enter: [
+          "O Presidente entra a cumprir um mandato importante: não cair antes do terceiro copo. A faixa ficou no carro. O carro ficou mal estacionado.",
+          "«Zé, eu não estou aqui. Se alguém perguntar, estou numa inauguração. Inaugura-me um bagaço.»"
+        ],
+        listen: "Deixas-o discursar para o porta-guardanapos. Entre a ciclovia e a pátria, ele confessa obras que foram inauguradas três vezes e asfaltadas nenhuma.",
+        palha: "Serves-lhe o de sempre e não cobras o discurso. Ele fica teu amigo por vinte minutos, que é o mandato máximo de um bêbado grato.",
+        marosca: "O copo que lhe dás não passava numa análise, mas passa numa sessão de Câmara se ninguém souber ler. Ele brinda «à iniciativa privada».",
+        kick: "Expulsas o Poder Local com a vassoura. Amanhã o Poder Local lembra-se, de cabeça a doer e de caneta na mão.",
+        gossip: {
+          id: "ciclovia-fantasma",
+          tag: "junta",
+          worksOn: ["presidente"],
+          title: "A ciclovia inaugurada três vezes",
+          text: "A ciclovia da freguesia foi inaugurada três vezes e asfaltada nenhuma. O dinheiro foi para estudos de mobilidade junto ao mar, com marisco."
+        }
+      },
+      {
+        id: "manel",
+        name: "Ti Manel das Obras",
+        sprite: "manel",
+        enter: [
+          "O Ti Manel entra com pó de cimento na sobrancelha e um orçamento no bolso de trás, que é onde os orçamentos ganham peso.",
+          "«Ó Zé, essa parede está a pedir uma intervenção. Eu estou a pedir um bagaço. Uma coisa de cada vez.»"
+        ],
+        listen: "Aturas a história do coreto, do adro e de uma rotunda que só existe no papel. Ele próprio meteu o coreto no orçamento como estrutura estratégica. São dois paletes.",
+        palha: "Serves e deixas-o falar de vigas. A paciência desce menos do que o normal porque o homem, no fundo, só quer não ir para a obra.",
+        marosca: "Ele percebe que o vinho tem «aditivo». Chama-lhe assim para não dizer aldrabice. Bebe na mesma e pisca o olho, que é a assinatura dos cúmplices.",
+        kick: "Mandas o capacete de volta para a rua. Ele diz que a tua tasca não tem viabilidade construtiva. A aldeia traduz: foste grosseiro.",
+        gossip: {
+          id: "coreto-paletes",
+          tag: "junta",
+          worksOn: ["presidente"],
+          title: "O coreto são dois paletes",
+          text: "O Ti Manel facturou o coreto da junta como requalificação estrutural. O coreto é dois paletes e um microfone que não funciona."
+        }
+      },
+      {
+        id: "padre",
+        name: "Padre Custódio",
+        sprite: "padre",
+        enter: [
+          "O Padre Custódio entra e tira o chapéu como quem desinfecta a divisão. Pede um tinto «para o corpo, que a alma já tem quem a ature».",
+          "«Não venho fiscalizar, Zé. Venho sentar-me. Deus também se sentou, segundo consta, e não pediu factura.»"
+        ],
+        listen: "Ouves um quase-sermão sobre a gula. No fim, mais baixo, ele diz que o Hilário assina licenças durante a missa, escondidas no folheto da quermesse.",
+        palha: "Serves o tinto de mesa e não cobras a homilia. Ele deixa uma moeda a mais «para as almas», que tu metes na carteira, onde as almas também cabem.",
+        marosca: "Servir marosca a um padre é uma escolha teológica. Ele faz uma careta de quem reconhece o mal e bebe outra vez, para confirmar.",
+        kick: "Corres o padre. Isto em aldeia não é uma decisão comercial, é um capítulo. As velhas vão rezar por ti com muito pouco entusiasmo.",
+        gossip: {
+          id: "licencas-na-missa",
+          tag: "junta",
+          worksOn: ["presidente"],
+          title: "Licenças assinadas na missa",
+          text: "O Padre Custódio viu o Hilário assinar licenças durante o sermão, com o folheto da quermesse por cima, a fingir que seguia a leitura."
+        }
+      },
+      {
+        id: "emigrante",
+        name: "Zeca, o Emigrante",
+        sprite: "emigrante",
+        enter: [
+          "O Zeca volta de França com uma mala, um relógio grande e a necessidade de comparar tudo com «lá fora», incluindo o teu balcão.",
+          "«Em França isto era outro nível, Zé. Mas o bagaço deles não presta. Serve lá isso, que eu comparo.»"
+        ],
+        listen: "Aturas o salário, a autoestrada e o pão. Depois ele baixa a voz: viu o Belmiro, do Copo Sujo, a descarregar garrafas sem guia, com um santo de plástico a tapar o lote.",
+        palha: "Serves bagaço a sério. Ele diz que em França não há disto, e por um segundo a tasca ganha uma estrela que não se come.",
+        marosca: "Serves-lhe o batizado. Ele, habituado a desconfiar de tudo menos de si, diz que está forte e paga como quem tem euros a mais. O estômago é que há-de fazer a conversão.",
+        kick: "Dizes-lhe que volte para a mala. Ele sai ofendido em duas línguas. A aldeia fica do lado dele, porque a mala impõe respeito.",
+        gossip: {
+          id: "belmiro-sem-guia",
+          tag: "gnr",
+          worksOn: [],
+          title: "O Belmiro traz vinho sem guia",
+          text: "O dono do Copo Sujo traz garrafas no porta-bagagens, sem guia, com um santo de plástico a tapar o lote. O Zeca viu. O Zeca conta."
+        }
+      }
+    ];
+
+    let state = freshState();
+    let ui = blankUi();
+    let audioCtx = null;
+    let drawnScene = "";
+
+    function freshState() {
+      return {
+        v: 1,
+        day: 1,
+        money: 180,
+        heat: 6,
+        reputation: 60,
+        patience: 78,
+        debt: 280,
+        objectiveIndex: 0,
+        location: "tasca",
+        stock: { imperial: 5, bagaco: 3, tremocos: 8, vinho: 2, presunto: 0 },
+        illegal: { vinho: 0, cigarros: 0, carne: 0 },
+        slots: 0,
+        notebook: [],
+        tale: null,
+        taleQuiet: false,
+        carry: null,
+        queue: [],
+        pending: null,
+        tutorialDone: false,
+        bribeDays: 0,
+        sickRolls: [],
+        crimesToday: 0,
+        upgrades: [],
+        montraPartida: false,
+        disasters: 0,
+        sound: true,
+        stats: { served: 0, maroscas: 0, kicks: 0, raids: 0 }
+      };
+    }
+
+    function blankUi() {
+      return {
+        mode: "title",
+        scene: "title",
+        title: "",
+        lines: [],
+        resultChoices: [],
+      visitor: null,
+      shake: false,
+      beat: 0,
+      spots: [],
+      arrive: 1,
+      batch: false,
+      act: null
+    };
+    }
+
+    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function euro(n) { return Math.round(n).toLocaleString("pt-PT") + " €"; }
+    function bite(text) {
+      const clean = String(text || "").replace(/\s+/g, " ").trim();
+      let end = clean.length - 1;
+      let sentences = 0;
+      for (let i = 0; i < clean.length; i++) {
+        if (".!?".indexOf(clean[i]) !== -1 && (i === clean.length - 1 || clean[i + 1] === " ")) {
+          sentences += 1;
+          end = i;
+          if (sentences >= 2 || i > 90) break;
+        }
+      }
+      const cut = clean.slice(0, end + 1);
+      return cut.length > 150 ? cut.slice(0, 147).trim() + "…" : cut;
+    }
+    function quip(text) {
+      const clean = String(text || "").replace(/\s+/g, " ").trim();
+      const a = clean.indexOf("«");
+      const b = clean.indexOf("»");
+      if (a >= 0 && b > a) return clean.slice(a, b + 1);
+      const dot = clean.search(/[.!?](\s|$)/);
+      const cut = dot === -1 ? clean : clean.slice(0, dot + 1);
+      return cut.length > 90 ? cut.slice(0, 87).trim() + "…" : cut;
+    }
+
+    function wrapWords(text, max) {
+      const words = String(text || "").replace(/\s+/g, " ").trim().split(" ");
+      const lines = [];
+      let cur = "";
+      words.forEach((w) => {
+        if (!w) return;
+        const next = cur ? cur + " " + w : w;
+        if (next.length > max && cur) {
+          lines.push(cur);
+          cur = w;
+        } else cur = next;
+      });
+      if (cur) lines.push(cur);
+      return lines;
+    }
+    function glance(soundName) {
+      sfx(soundName || "blip");
+      touch();
+      render();
+    }
+    const floats = [];
+    let tick = 0;
+    function popup(text, color) {
+      floats.push({ text: text, color: color, t: 0, x: 70 + Math.random() * 150, y: 86 });
+    }
+    function personById(id) { return PEOPLE.find((p) => p.id === id) || null; }
+    function placeById(id) { return PLACES.find((p) => p.id === id) || PLACES[0]; }
+
+    function goal() {
+      const i = state.objectiveIndex;
+      if (i < SCRIPT_GOALS.length) return SCRIPT_GOALS[i];
+      const k = i - SCRIPT_GOALS.length;
+      const base = ABSURD_GOALS[k % ABSURD_GOALS.length];
+      const loop = Math.floor(k / ABSURD_GOALS.length);
+      return {
+        id: "abs-" + k,
+        title: loop ? base.title + " (vol. " + (loop + 1) + ")" : base.title,
+        cost: Math.round(180000 * Math.pow(2.1, k)),
+        pitch: base.pitch,
+        disaster: base.disaster
+      };
+    }
+
+    function interestDue() {
+      if (state.debt <= 0) return 0;
+      return Math.max(RULES.interestMin, Math.round(state.debt * RULES.interest));
+    }
+
+    function addMoney(n) {
+      const v = Math.round(n);
+      state.money = Math.max(0, state.money + v);
+      if (!ui.batch && v) popup((v > 0 ? "+" : "") + euro(v), v > 0 ? "#ffff55" : "#ff5555");
+    }
+    function addHeat(n) {
+      if (!n) return;
+      state.heat = clamp(Math.round(state.heat + n), 0, 100);
+      if (!ui.batch) popup((n > 0 ? "+" : "") + Math.round(n) + " calor", n > 0 ? "#ff5555" : "#55ff55");
+    }
+    function addRep(n) {
+      if (!n) return;
+      state.reputation = clamp(Math.round(state.reputation + n), 0, 100);
+      if (!ui.batch) popup((n > 0 ? "+" : "") + Math.round(n) + " fama", n > 0 ? "#55ff55" : "#ff5555");
+    }
+    function addPat(n) {
+      if (!n) return;
+      state.patience = clamp(Math.round(state.patience + n), 0, 100);
+      if (!ui.batch) popup((n > 0 ? "+" : "") + Math.round(n) + " calma", n > 0 ? "#55ffff" : "#ffff55");
+    }
+
+    function peekIllegal() {
+      for (const id of ["carne", "vinho", "cigarros"]) {
+        if (state.illegal[id] > 0) return id;
+      }
+      return null;
+    }
+
+    function consumeIllegal() {
+      const id = peekIllegal();
+      if (!id) return null;
+      state.illegal[id] -= 1;
+      return id;
+    }
+
+    function consumeLegal() {
+      for (const id of ["bagaco", "imperial", "vinho", "tremocos"]) {
+        if (state.stock[id] > 0) {
+          state.stock[id] -= 1;
+          return id;
+        }
+      }
+      return null;
+    }
+
+    function freshQueue() {
+      const n = clamp(2 + Math.floor(state.reputation / 22), 2, 7);
+      const rich = ["beto", "presidente", "cripto", "emigrante"];
+      const poor = ["sueca", "albertina", "padre", "manel"];
+      const q = [];
+      if (!state.tutorialDone) q.push("albertina");
+      while (q.length < n) {
+        const roll = Math.random() * 100;
+        let pool = poor;
+        if (roll < state.reputation * 0.45) pool = rich;
+        else if (roll > 93) pool = ["fiscal"];
+        else if (roll > 72) pool = ["sueca", "albertina", "fiscal"];
+        q.push(pick(pool));
+      }
+      state.queue = q;
+      state.lineRun = true;
+      ensureTale();
+    }
+
+    const TALES = [
+      {
+        id: "faixa",
+        title: "A faixa do Hilário",
+        ignore: "A faixa ficou no balcão. De manhã a aldeia usou-a de toalha na paragem.",
+        steps: [
+          {
+            loc: "rua", x: 6.2, y: 2.55, who: "mulher", name: "Albertina",
+            hint: "A Albertina está à porta da tasca, com a boca cheia.",
+            near: "«A faixa do Hilário ficou no teu barril. Leva-a à Junta antes que eu a use de pano.»",
+            act: "hear",
+            done: "Ela larga-te o braço. A faixa está no barril da esquerda."
+          },
+          {
+            loc: "tasca", x: 1.55, y: 3.3, prop: "faixa",
+            hint: "Entra no Pica-Pau. A faixa está no barril da esquerda.",
+            near: "A faixa, com nódoa de tremoço e de vaidade. E para a levares.",
+            act: "take", item: "faixa",
+            done: "Levas a pátria ao ombro. O Hilário está na Junta."
+          },
+          {
+            loc: "junta", x: 3.5, y: 1.7, who: "presidente", name: "Hilário",
+            hint: "A Junta. O Hilário finge que não te vê.",
+            near: "«Isso não é minha. É da pátria. E da pátria não se fala.»",
+            missing: "Ele sorri como inocente. Sem a faixa, o sorriso aguenta.",
+            act: "give", item: "faixa",
+            pay: 45, rep: 4, heat: 2, gossip: "ciclovia-fantasma",
+            done: "Quarenta e cinco euros para a pátria ficar calada. A faixa fica ao contrário."
+          }
+        ]
+      },
+      {
+        id: "santo",
+        title: "O santo do Belmiro",
+        ignore: "O santo ficou na garagem. O Belmiro ofereceu vinho à GNR a noite toda.",
+        ignoreHeat: 8,
+        steps: [
+          {
+            loc: "rua", x: 11.2, y: 2.55, who: "emigrante", name: "Zeca",
+            hint: "O Zeca está na rua, entre a tasca e a garagem.",
+            near: "«O Belmiro escondeu um santo na garagem. A GNR paga melhor do que ele.»",
+            act: "hear",
+            done: "O santo está com o Zequinha. Porta cinzenta."
+          },
+          {
+            loc: "garagem", x: 3.5, y: 1.7, who: "zequinha", name: "Zequinha",
+            hint: "A garagem. Pede o santo ao Zequinha.",
+            near: "«Não o partas. O Belmiro é sensível e o santo também.»",
+            act: "take", item: "santo", heat: 4,
+            done: "O santo cheira a vinho de mala. A GNR é a porta verde."
+          },
+          {
+            loc: "gnr", x: 3.5, y: 1.7, who: "farda", name: "Cabo",
+            hint: "Leva o santo ao cabo. Porta verde.",
+            near: "O cabo olha para o santo como quem olha para um processo.",
+            missing: "Sem o santo isto é uma visita. Ele já tem visitas.",
+            act: "give", item: "santo",
+            pay: 30, heat: -16, gossip: "belmiro-sem-guia",
+            done: "O santo vai para a gaveta do baralho. O Belmiro ainda sorri."
+          }
+        ]
+      },
+      {
+        id: "presunto",
+        title: "Os juros têm fome",
+        ignore: "Não levaste o presunto. O Matos comeu juros e partiu um copo que não era dele.",
+        ignoreDebt: 25,
+        steps: [
+          {
+            loc: "rua", x: 12.4, y: 4.6, who: "agiota", name: "Matos",
+            hint: "O Matos está na rua, à frente da casa dele. Não traz flores.",
+            near: "«Hoje não quero euros. Quero presunto. Os juros também comem.»",
+            act: "hear",
+            done: "Um presunto. A feira vende, se não tiveres."
+          },
+          {
+            loc: "feira", x: 3.5, y: 1.7, who: "mulher", name: "Feirante",
+            hint: "Compra o presunto na feira e fala com ela.",
+            near: "«Para o Matos, não é? Embrulho sem laço. Laço é para quem paga.»",
+            missing: "Sem presunto ela nem tira o papel. As caixas estão atrás dela.",
+            need: "presunto",
+            act: "take", item: "presunto",
+            done: "O presunto vai contigo. O Matos espera em casa, não na rua."
+          },
+          {
+            loc: "matos", x: 3.5, y: 1.7, who: "agiota", name: "Sr. Matos",
+            hint: "Casa do Matos. O presunto vai à frente.",
+            near: "Ele pesa o presunto na mão. «Chega. Os juros é que não emagrecem.»",
+            missing: "Abre a porta, vê as tuas mãos vazias, fecha. Sem presunto não há desconto.",
+            act: "give", item: "presunto",
+            debt: 40, rep: 2,
+            done: "Quarenta euros saem da dívida. Os juros de amanhã continuam vivos."
+          }
+        ]
+      }
+    ];
+
+    function currentTale() {
+      if (!state.tale) return null;
+      return TALES.find((t) => t.id === state.tale.id) || null;
+    }
+
+    function currentStep() {
+      const tale = currentTale();
+      if (!tale) return null;
+      return tale.steps[state.tale.step] || null;
+    }
+
+    function ensureTale() {
+      if (state.taleQuiet) return;
+      if (state.tale && TALES.some((t) => t.id === state.tale.id)) return;
+      const tale = TALES[(Math.max(1, state.day) - 1) % TALES.length];
+      state.tale = { id: tale.id, step: 0 };
+      state.carry = null;
+    }
+
+    function gossipById(id) {
+      for (let i = 0; i < PEOPLE.length; i++) {
+        if (PEOPLE[i].gossip && PEOPLE[i].gossip.id === id) return PEOPLE[i].gossip;
+      }
+      return null;
+    }
+
+    function taleNear() {
+      const step = currentStep();
+      if (!step || !ui.fp || ui.fp.loc !== step.loc) return null;
+      if (Math.hypot(ui.fp.x - step.x, ui.fp.y - step.y) > 1.5) return null;
+      return step;
+    }
+
+    const BARKS = {
+      mulher: "A Albertina já sabe o que vais fazer. Tu ainda estás a chegar lá.",
+      velho: "O António baralha o ar. «A sueca é que me rouba. A vida também.»",
+      manel: "O Ti Manel mede a rua com o olhar. A rua fica mais cara.",
+      zequinha: "O Zequinha limpa as mãos a um pano que já desistiu.",
+      agiota: "O Sr. Matos sorri. Tem três dentes e usa-os todos.",
+      emigrante: "O Zeca compara esta rua com uma rua francesa. Esta perde.",
+      farda: "O cabo finge que olha para o telemóvel. O telemóvel é um baralho.",
+      padre: "O padre cumprimenta-te como quem já rezou por ti e não gostou.",
+      presidente: "O Hilário ensaia o discurso para uma plateia de pedra."
+    };
+
+    const CARRY_NAME = { faixa: "a faixa do Hilário", santo: "o santo do Belmiro", presunto: "o presunto" };
+
+    function nearbySoul() {
+      if (!ui.fp) return null;
+      const map = WORLD[ui.fp.loc];
+      if (!map || !map.sprites) return null;
+      let best = null;
+      let bestD = 1.6;
+      map.sprites.forEach((spr) => {
+        if (!spr.who) return;
+        const d = Math.hypot(spr.x - ui.fp.x, spr.y - ui.fp.y);
+        if (d < bestD) { best = spr; bestD = d; }
+      });
+      return best;
+    }
+
+    function storyLine() {
+      if (ui.bark) return ui.bark;
+      const near = taleNear();
+      if (near) return near.near + "  ·  E";
+      const step = currentStep();
+      if (step && state.carry) return "Levas " + (CARRY_NAME[state.carry] || "uma coisa") + ". " + step.hint;
+      if (step) return step.hint;
+      const soul = nearbySoul();
+      if (soul && BARKS[soul.who]) return BARKS[soul.who];
+      return "A aldeia mastiga o serão. Alguém há-de precisar de ti.";
+    }
+
+    function talkTale() {
+      const step = taleNear();
+      if (!step || !state.tale) return false;
+      if (step.need === "presunto" && !(state.stock.presunto > 0)) {
+        ui.bark = step.missing || "Ainda não tens presunto.";
+        ui.barkT = 3.4;
+        sfx("blip");
+        render();
+        return true;
+      }
+      if (step.act === "give" && state.carry !== step.item) {
+        ui.bark = step.missing || "Ainda não trazes o que pediram.";
+        ui.barkT = 3.4;
+        sfx("blip");
+        render();
+        return true;
+      }
+      if (step.need === "presunto") state.stock.presunto -= 1;
+      if (step.act === "take") state.carry = step.item;
+      if (step.act === "give") state.carry = null;
+      if (step.pay) addMoney(step.pay);
+      if (step.rep) addRep(step.rep);
+      if (step.heat) addHeat(step.heat);
+      if (step.debt) state.debt = Math.max(0, state.debt - step.debt);
+      if (step.gossip) {
+        const g = gossipById(step.gossip);
+        if (learnGossip(g)) popup("CADERNO", "#e6c56a");
+      }
+      ui.bark = step.done;
+      ui.barkT = 4.4;
+      state.tale.step += 1;
+      const tale = currentTale();
+      if (!tale || state.tale.step >= tale.steps.length) {
+        state.tale = null;
+        state.taleQuiet = true;
+        state.carry = null;
+        popup("CASO FECHADO", "#e6c56a");
+      }
+      sfx(step.pay || step.debt ? "coin" : "blip");
+      touch();
+      render();
+      return true;
+    }
+
+    function learnGossip(g) {
+      if (!g || state.notebook.some((s) => s.id === g.id)) return false;
+      state.notebook.push({
+        id: g.id,
+        tag: g.tag,
+        title: g.title,
+        text: g.text,
+        worksOn: g.worksOn ? g.worksOn.slice() : [],
+        used: false
+      });
+      return true;
+    }
+
+    function unusedSecrets(tag) {
+      return state.notebook.filter((s) => !s.used && (!tag || s.tag === tag));
+    }
+
+    function secretsForPerson(person) {
+      return state.notebook.filter((s) => !s.used && (s.worksOn || []).includes(person.id));
+    }
+
+    function touch() {
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
+      catch (err) { /* o browser recusou a gaveta */ }
+    }
+
+    function peekSave() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (!data || data.v !== 1 || !Number.isFinite(data.day)) return null;
+        return data;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function normalize(data) {
+      const base = freshState();
+      const next = Object.assign(base, data);
+      next.stock = Object.assign(freshState().stock, data.stock || {});
+      next.illegal = Object.assign(freshState().illegal, data.illegal || {});
+      next.stats = Object.assign(freshState().stats, data.stats || {});
+      next.notebook = (data.notebook || []).map((s) => Object.assign({ worksOn: [], used: false }, s));
+      next.queue = Array.isArray(data.queue) ? data.queue : [];
+      next.sickRolls = Array.isArray(data.sickRolls) ? data.sickRolls : [];
+      next.upgrades = Array.isArray(data.upgrades) ? data.upgrades : [];
+      next.taleQuiet = !!data.taleQuiet;
+      next.carry = typeof data.carry === "string" ? data.carry : null;
+      next.tale = data.tale && data.tale.id ? { id: String(data.tale.id), step: Math.max(0, Math.round(Number(data.tale.step) || 0)) } : null;
+      next.money = Math.max(0, Math.round(Number(next.money) || 0));
+      next.debt = Math.max(0, Math.round(Number(next.debt) || 0));
+      next.heat = clamp(Math.round(Number(next.heat) || 0), 0, 100);
+      next.reputation = clamp(Math.round(Number(next.reputation) || 0), 0, 100);
+      next.patience = clamp(Math.round(Number(next.patience) || 0), 0, 100);
+      next.day = Math.max(1, Math.round(Number(next.day) || 1));
+      next.objectiveIndex = Math.max(0, Math.round(Number(next.objectiveIndex) || 0));
+      next.slots = Math.max(0, Math.round(Number(next.slots) || 0));
+      if (!PLACES.some((p) => p.id === next.location)) next.location = "tasca";
+      next.sound = data.sound !== false;
+      return next;
+    }
+
+    function unlockAudio() {
+      if (!state.sound) return null;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      return audioCtx;
+    }
+
+    function tone(freq, when, dur, type, gain, freq2) {
+      const a = unlockAudio();
+      if (!a) return;
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, when);
+      if (freq2) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq2), when + dur);
+      g.gain.setValueAtTime(gain, when);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+      o.connect(g);
+      g.connect(a.destination);
+      o.start(when);
+      o.stop(when + dur + 0.02);
+    }
+
+    function noise(dur, gain) {
+      const a = unlockAudio();
+      if (!a) return;
+      const n = Math.max(1, Math.floor(a.sampleRate * dur));
+      const buf = a.createBuffer(1, n, a.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      const src = a.createBufferSource();
+      const g = a.createGain();
+      src.buffer = buf;
+      g.gain.value = gain;
+      src.connect(g);
+      g.connect(a.destination);
+      src.start();
+    }
+
+    function sfx(name) {
+      if (!state.sound) return;
+      const a = unlockAudio();
+      if (!a) return;
+      const t = a.currentTime;
+      if (name === "blip") tone(660, t, 0.05, "square", 0.04);
+      if (name === "coin") [880, 1175, 1568].forEach((f, i) => tone(f, t + i * 0.07, 0.08, "square", 0.04));
+      if (name === "glass") tone(1480, t, 0.12, "sine", 0.05, 420);
+      if (name === "register") { noise(0.12, 0.05); tone(190, t, 0.12, "square", 0.04, 80); }
+      if (name === "door") tone(150, t, 0.28, "sawtooth", 0.03, 48);
+      if (name === "siren") {
+        tone(620, t, 0.18, "square", 0.035, 900);
+        tone(900, t + 0.18, 0.18, "square", 0.035, 620);
+      }
+      if (name === "disaster") { tone(220, t, 0.45, "sawtooth", 0.05, 40); noise(0.4, 0.06); }
+    }
+
+    function stockBits(table, bag) {
+      const bits = [];
+      Object.keys(table).forEach((id) => {
+        if (bag[id] > 0) bits.push(bag[id] + " " + table[id].short);
+      });
+      return bits;
+    }
+
+    function describe() {
+      const g = goal();
+      const loc = state.location;
+      if (loc === "tasca") {
+        const fila = state.pending ? "Tens um cliente a meio da frase." : (state.queue.length ? "Há " + state.queue.length + " almas na fila." : "A fila acabou. Até a mosca foi embora.");
+        const balcao = stockBits(LEGAL, state.stock);
+        const cave = stockBits(ILLEGAL, state.illegal);
+        const ruins = state.upgrades.slice(-2).map((id) => RUIN[id] || "Ficou mais uma cicatriz na tasca. A aldeia aponta e depois pede imperial.");
+        const clima = state.reputation > 75 ? "Hoje a aldeia veio de camisa lavada." : (state.reputation < 30 ? "Só entra quem não tem outro sítio." : "A casa enche o que a reputação deixa.");
+        return {
+          title: "O Pica-Pau",
+          paragraphs: [
+            "A tasca do Zé. Cheira a vinho, a cal e a decisões que amanhã têm nome.",
+            g.pitch,
+            fila + " " + clima,
+            "Balcão: " + (balcao.length ? balcao.join(", ") : "um deserto com guardanapos") + ". Cave: " + (cave.length ? cave.join(", ") : "limpa, infelizmente") + (state.slots ? ". Slots a piscar: " + state.slots : "") + ".",
+            state.montraPartida ? "A montra está partida. A rua vê o interior e o interior vê a vergonha." : "A montra ainda segura o mundo lá fora."
+          ].concat(ruins)
+        };
+      }
+      if (loc === "garagem") {
+        return {
+          title: "Garagem do Zequinha",
+          paragraphs: [
+            "O Zequinha tem uma garagem, um bigode e zero perguntas. O que aqui se vende não leva factura: leva destino.",
+            "Vinho batizado, tabaco sem selo, carne que não conheceu veterinário, e uma slot que tosse moedas e atrai a ASAE como a luz atrai a traça.",
+            "Ele limpa as mãos a um pano que já foi camisa e diz: «Ó Zé, o honesto paga a renda. O outro paga o bilhar.»"
+          ]
+        };
+      }
+      if (loc === "junta") {
+        return {
+          title: "Junta de Freguesia",
+          paragraphs: [
+            "Cheira a papel, a café requentado e a carimbo. O Presidente Hilário sorri com a boca; os olhos estão a fazer contas.",
+            state.bribeDays > 0
+              ? "A contribuição voluntária está em pausa por " + state.bribeDays + (state.bribeDays === 1 ? " noite." : " noites.") + " O Hilário anda distraído de propósito."
+              : "Sem um jeitinho, a freguesia leva uma fatia todas as noites. Chamam-lhe participação. Tu chamas-lhe imposto com laço.",
+            "Pedir as coisas pelo caminho direito dá reputação e muito pouco dinheiro. O caderno, se tiver um podre, abre portas que a taxa não abre.",
+            "As vizinhas pagam mal pelas fofocas. Aqui elas valem uma licença. Escolhe o desperdício com juízo."
+          ]
+        };
+      }
+      if (loc === "feira") {
+        return {
+          title: "Feira e mercado",
+          paragraphs: [
+            "Bancas, alho, um altifalante rouco e a Dona Albertina em versão ambulante. Aqui o stock é legal, o troco é certo, e o lucro é uma anedota lenta.",
+            "Também se vendem fofocas às coscuvilheiras. Pagam pouco e queimam o caderno. Útil para o pão. Estúpido se ias chantagear a Junta.",
+            "O presunto não é para o balcão. É para o posto, quando um cabo precisa de ficar comovido."
+          ]
+        };
+      }
+      if (loc === "matos") {
+        const juros = interestDue();
+        return {
+          title: "Casa do Sr. Matos",
+          paragraphs: [
+            "Uma sala escura, um sofá claro e o Sr. Matos, que sorri com os três dentes que o negócio lhe deixou. A corrente ao pescoço podia pagar a tua dívida, e ele sabe.",
+            "Deves " + euro(state.debt) + ". Se não abateres hoje, a noite leva " + euro(juros) + " de juros. Se não tiveres os juros, os capangas levam a montra.",
+            state.debt > 1200
+              ? "Ele fala baixo, que é pior. «Zé, eu gosto de ti. Os meus rapazes gostam menos. Regulariza isso antes que a afeição acabe.»"
+              : "«Precisas de ar para respirar? Eu vendo ar. O preço é ficares mais tempo debaixo de água.»"
+          ]
+        };
+      }
+      return {
+        title: "Posto da GNR",
+        paragraphs: [
+          "O cabo tem uma esferográfica roída e o ar de quem já ouviu todas as versões, incluindo a verdadeira, e preferiu a que tem presunto.",
+          "Calor policial e ASAE: " + state.heat + "%. Acima dos 40 a rusga deixa de ser anedota e passa a ser probabilidade.",
+          "Podes tentar apagar o auto com bagaço, presunto ou notas. Podes denunciar o Belmiro, do Copo Sujo. E podes, se o caderno tiver um podre das fardas, fazer o livro fechar-se sozinho.",
+          state.heat >= 40 ? "Estás a cheirar a rusga. Ou baixa isto ou dorme com a carteira noutro sítio." : "Por agora o posto está calmo. Não confundas calma com amizade."
+        ]
+      };
+    }
+
+    function arrive(loc, silent) {
+      state.location = loc;
+      ui.visitor = null;
+      if (loc === "tasca") {
+        beginCab(!!silent, ui.fp && ui.fp.loc === "rua" ? "door" : "bar");
+        return;
+      }
+      ui.scene = loc;
+      ui.mode = ui.cab ? "cab" : "location";
+      spawnFP(loc, "in");
+      if (!silent) sfx("door");
+      touch();
+      render();
+    }
+
+    function showText(title, lines, choices, scene, soundName, shake) {
+      ui.batch = false;
+      ui.beat = 0;
+      ui.mode = "result";
+      ui.title = title;
+      ui.lines = lines;
+      ui.resultChoices = choices;
+      if (scene) ui.scene = scene;
+      ui.visitor = null;
+      ui.shake = !!shake;
+      if (soundName) sfx(soundName);
+      touch();
+      render();
+    }
+
+    function openOver(kind, prelude) {
+      ui.batch = false;
+      ui.beat = 0;
+      ui.mode = "over";
+      ui.over = kind;
+      ui.scene = "tasca";
+      ui.visitor = null;
+      ui.shake = true;
+      if (kind === "patience") {
+        ui.title = "O Zé passou-se da cabeça";
+        ui.lines = (prelude || []).concat([
+          "A paciência chegou a zero. Partiste copos, um banco, o quadro do Benfica e o que restava de compostura.",
+          "Acordas no centro de saúde com a cabeça a latejar e uma factura. É um game over temporário: a tasca fica de pé, tu ficas mais pobre, e amanhã há outro dia para estragar."
+        ]);
+        sfx("disaster");
+      } else {
+        ui.title = "Boicote na aldeia";
+        ui.lines = (prelude || []).concat([
+          "A reputação caiu a zero. Nem o primo entra. O Copo Sujo põe a música mais alto de propósito.",
+          "Durante a noite a aldeia fala de ti no pretérito. De manhã reabres, mais pequeno, com metade do dinheiro e a lição mal aprendida."
+        ]);
+        sfx("door");
+      }
+      ui.resultChoices = [{
+        label: kind === "patience" ? "Acordar no centro de saúde" : "Encarar a manhã do boicote",
+        fn: () => recover(kind)
+      }];
+      touch();
+      render();
+    }
+
+    function recover(kind) {
+      if (kind === "patience") {
+        const bill = RULES.hospital;
+        if (state.money >= bill) addMoney(-bill);
+        else {
+          state.debt += bill - state.money;
+          state.money = 0;
+        }
+        state.patience = 64;
+        addRep(-5);
+      } else {
+        state.money = Math.round(state.money * 0.5);
+        state.reputation = 32;
+        state.patience = clamp(state.patience + 8, 0, 100);
+        addHeat(-8);
+      }
+      state.day += 1;
+      state.pending = null;
+      state.queue = [];
+      state.crimesToday = 0;
+      state.sickRolls = [];
+      state.location = "tasca";
+      freshQueue();
+      arrive("tasca", true);
+    }
+
+    function collapsed() {
+      if (state.patience <= 0) return "patience";
+      if (state.reputation <= 0) return "reputation";
+      return null;
+    }
+
+    function finishCustomer(caption, soundName, actKind, dry, hot) {
+      state.pending = null;
+      state.stats.served += 1;
+      const dead = collapsed();
+      if (dead) {
+        openOver(dead, [caption]);
+        return;
+      }
+      if (ui.mode === "cab" && ui.cab) {
+        sfx(soundName);
+        ui.cab.flash = caption;
+        ui.cab.flashT = 1.15;
+        ui.cab.fill = 0;
+        ui.cab.listen = 0;
+        ui.cab.pour = false;
+        ui.cab.listening = false;
+        ui.cab.drag = null;
+        ui.visitor = null;
+        touch();
+        render();
+        return;
+      }
+      ui.mode = "act";
+      ui.scene = "tasca";
+      ui.act = { kind: actKind || "palha", t: 0, caption: caption, dry: !!dry, hot: !!hot };
+      sfx(soundName);
+      touch();
+      render();
+    }
+
+    function endAct() {
+      if (ui.mode !== "act") return;
+      ui.visitor = null;
+      ui.act = null;
+      state.location = "tasca";
+      beginCab(true);
+    }
+
+    function beginCab(silent, entry) {
+      const keep = !!(ui.cab && (ui.mode === "cab" || ui.mode === "location"));
+      ui.mode = "cab";
+      ui.scene = "tasca";
+      ui.act = null;
+      if (!keep) {
+        ui.cab = {
+          bottle: "honesto",
+          fill: 0,
+          pour: false,
+          listen: 0,
+          listening: false,
+          wait: 0,
+          waitMax: 8.5,
+          enter: 0,
+          flash: "",
+          flashT: 0,
+          drag: null,
+          line: "",
+          brake: false,
+          dwell: 0
+        };
+        if (!state.pending && !(state.queue && state.queue.length) && !state.lineRun) freshQueue();
+        seatNext();
+      }
+      spawnFP("tasca", entry || "bar");
+      if (!silent) sfx("door");
+      touch();
+      render();
+    }
+
+    function seatNext() {
+      const c = ui.cab;
+      if (!c) return;
+      c.fill = 0;
+      c.pour = false;
+      c.listen = 0;
+      c.listening = false;
+      c.drag = null;
+      c.brake = false;
+      c.dwell = 0;
+      c.wait = 0;
+      c.enter = 0;
+      if (!state.pending) {
+        if (!state.queue.length) {
+          ui.visitor = null;
+          c.line = "";
+          c.waitMax = 16;
+          return;
+        }
+        state.pending = state.queue.shift();
+        if (state.pending === "albertina") state.tutorialDone = true;
+      }
+      const person = personById(state.pending);
+      ui.visitor = person ? person.sprite : null;
+      c.line = person ? quip(person.enter[state.day % person.enter.length]) : "";
+      c.waitMax = person && person.id === "albertina" && state.day === 1 ? 22 : 16;
+    }
+
+    function cabServe(fill) {
+      const person = personById(state.pending);
+      const c = ui.cab;
+      if (!person || !c || c.flashT > 0) return;
+      c.pour = false;
+      const over = fill > 0.9;
+      const good = fill >= 0.72 && fill <= 0.9;
+      const scale = over ? 0 : good ? 1 : 0.45;
+      if (c.bottle === "golpe") {
+        const itemId = consumeIllegal();
+        if (!itemId) {
+          popup("CAVE VAZIA", "#ff5555");
+          c.fill = 0;
+          c.bottle = "honesto";
+          sfx("glass");
+          return;
+        }
+        const item = ILLEGAL[itemId];
+        const tip = Math.floor(state.reputation / 40);
+        const bonus = person.id === "beto" || person.id === "cripto" ? 6 : 0;
+        let heat = item.heat;
+        if (person.id === "fiscal") heat += 18;
+        state.crimesToday += 1;
+        if (over) {
+          addHeat(Math.max(2, Math.round(heat * 0.6)));
+          addRep(-6);
+          finishCustomer("Entornou.", "glass", "marosca", false, true);
+          return;
+        }
+        addMoney(Math.max(1, Math.round((item.sell + tip + bonus) * scale)));
+        addHeat(heat);
+        if (!good) addRep(-3);
+        state.stats.maroscas += 1;
+        state.sickRolls.push({ who: person.name, weight: item.sick * (good ? 1 : 0.6) });
+        finishCustomer(person.id === "fiscal" ? "Ele cheirou o golpe." : (good ? "Bebeu." : "Meio copo."), "coin", "marosca", false, person.id === "fiscal");
+        return;
+      }
+      const itemId = consumeLegal();
+      const tip = Math.floor(state.reputation / 40);
+      if (!itemId) {
+        addRep(-4);
+        finishCustomer("Só saiu água.", "glass", "palha", true);
+        return;
+      }
+      if (over) {
+        addRep(-5);
+        finishCustomer("Entornou.", "glass", "palha", true);
+        return;
+      }
+      if (person.id === "presidente" && good) addRep(2);
+      if (person.id === "manel" && good) addPat(4);
+      if (person.id === "fiscal" && good) addHeat(-2);
+      if (!good) addRep(-2);
+      addMoney(Math.max(1, Math.round((LEGAL[itemId].sell + tip) * scale)));
+      finishCustomer(good ? "Certo." : "Cedo.", "register", "palha");
+    }
+
+    function releasePour() {
+      if (!ui.cab) return;
+      ui.cab.pour = false;
+    }
+
+    function cabMiss() {
+      if (!state.pending || !ui.cab || ui.cab.flashT > 0) return;
+      addRep(-6);
+      addPat(-3);
+      state.pending = null;
+      ui.visitor = null;
+      ui.cab.pour = false;
+      ui.cab.listening = false;
+      ui.cab.fill = 0;
+      ui.cab.flash = "Foi-se. E ainda levou a conversa.";
+      ui.cab.flashT = 1.15;
+      sfx("door");
+      const dead = collapsed();
+      if (dead) {
+        openOver(dead, ["Perdeu o horário."]);
+        return;
+      }
+      touch();
+      render();
+    }
+
+    function tickCab(dt) {
+      const c = ui.cab;
+      if (!c || ui.mode !== "cab") return;
+      if (c.flashT > 0) {
+        c.flashT -= dt;
+        if (c.flashT <= 0) {
+          c.flash = "";
+          c.flashT = 0;
+          seatNext();
+          render();
+        }
+        return;
+      }
+      c.enter = Math.min(1, (c.enter || 0) + dt * 2.4);
+      if (!state.pending) return;
+      if (atBar()) c.wait += dt;
+      if (!atBar()) {
+        c.pour = false;
+        c.brake = false;
+        c.dwell = 0;
+        c.listening = false;
+      } else if (c.brake) {
+        c.fill = Math.max(0, c.fill - dt * 0.46);
+        c.pour = false;
+        c.dwell = 0;
+      } else if (c.pour) {
+        c.fill = Math.min(1.18, c.fill + dt * 0.16);
+        c.dwell = 0;
+      } else if (!c.listening) {
+        const early = c.fill >= 0.5 && c.fill < 0.72;
+        const zone = c.fill >= 0.72 && c.fill <= 0.9;
+        if (early || zone) {
+          c.dwell = (c.dwell || 0) + dt;
+          if (c.dwell >= (zone ? 0.34 : 0.72)) cabServe(c.fill);
+        } else c.dwell = 0;
+      } else c.dwell = 0;
+      if (c.flashT > 0) return;
+      if (c.listening) {
+        c.listen = Math.min(1.2, (c.listen || 0) + dt / 1.35);
+        if (c.listen >= 1) {
+          c.listening = false;
+          c.listen = 0;
+          const person = personById(state.pending);
+          if (person) doListen(person);
+        }
+      } else {
+        c.listen = Math.max(0, (c.listen || 0) - dt / 0.4);
+      }
+      if (c.flashT > 0) return;
+      if (c.wait >= c.waitMax) cabMiss();
+    }
+
+    function cabText(g, text, x, y, size, color, align) {
+      g.fillStyle = color || "#f6efe4";
+      g.font = "600 " + size + "px Avenir Next, Segoe UI, sans-serif";
+      g.textAlign = align || "left";
+      g.textBaseline = "top";
+      g.fillText(text, x, y);
+    }
+
+    function cabDown(point) {
+      const c = ui.cab;
+      if (!c || ui.mode !== "cab" || c.flashT > 0) return;
+      if (point.x >= 286 && point.y <= 24) {
+        endDay();
+        return;
+      }
+      if (point.x >= 278 && point.y >= 26 && point.y <= 120) {
+        const atDoor = personById(state.pending);
+        if (atDoor) doKick(atDoor);
+        else endDay();
+        return;
+      }
+      if (point.x <= 40 && point.y >= 30 && point.y <= 112) {
+        openStreet();
+        return;
+      }
+      if (point.x >= 64 && point.x <= 104 && point.y >= 118) {
+        c.bottle = "honesto";
+        sfx("blip");
+        return;
+      }
+      if (point.x >= 214 && point.x <= 258 && point.y >= 118) {
+        if (!peekIllegal()) {
+          popup("CAVE VAZIA", "#ff5555");
+          sfx("glass");
+          return;
+        }
+        c.bottle = "golpe";
+        sfx("blip");
+        return;
+      }
+      const person = personById(state.pending);
+      const secret = person ? secretsForPerson(person)[0] : null;
+      if (secret && point.x >= 28 && point.x <= 58 && point.y >= 122 && point.y <= 156) {
+        doBlackmail(person, secret);
+        return;
+      }
+      if (person && point.x > 96 && point.x < 224 && point.y < 76) {
+        c.listening = true;
+        c.pour = false;
+        return;
+      }
+      if (person && point.x > 96 && point.x < 224 && point.y < 116) {
+        c.drag = point.x;
+        return;
+      }
+      if (person && point.y >= 158) {
+        c.brake = true;
+        c.brakePointer = true;
+        c.pour = false;
+        return;
+      }
+      if (person) {
+        c.pour = true;
+        c.brake = false;
+      }
+    }
+
+    function drawCab(g) {
+      const c = ui.cab || { fill: 0, wait: 0, waitMax: 8.5, bottle: "honesto", line: "", enter: 1 };
+      const person = personById(state.pending);
+      const fill = c.fill || 0;
+      const inZone = fill >= 0.72 && fill <= 0.9;
+      const over = fill > 0.9;
+      const q = (state.queue || []).length;
+
+      const wall = g.createLinearGradient(0, 0, 0, 120);
+      wall.addColorStop(0, "#7a5340");
+      wall.addColorStop(0.45, "#5a3a2a");
+      wall.addColorStop(1, "#3c261c");
+      g.fillStyle = wall;
+      g.fillRect(0, 0, 320, 120);
+      g.fillStyle = "#4a3024";
+      g.fillRect(0, 0, 320, 10);
+      g.fillStyle = "#2a1a12";
+      g.fillRect(0, 8, 320, 3);
+
+      const glow = g.createRadialGradient(168, 58, 8, 168, 78, 92);
+      glow.addColorStop(0, "rgba(255, 214, 150, 0.55)");
+      glow.addColorStop(0.45, "rgba(255, 176, 90, 0.16)");
+      glow.addColorStop(1, "rgba(255, 160, 70, 0)");
+      g.fillStyle = glow;
+      g.fillRect(70, 10, 190, 110);
+
+      g.strokeStyle = "#c9a36a";
+      g.lineWidth = 1.2;
+      g.beginPath();
+      g.moveTo(168, 10);
+      g.lineTo(168, 22);
+      g.stroke();
+      g.fillStyle = "#f0d7a2";
+      g.beginPath();
+      g.moveTo(154, 22);
+      g.lineTo(182, 22);
+      g.lineTo(176, 34);
+      g.lineTo(160, 34);
+      g.closePath();
+      g.fill();
+      g.fillStyle = "rgba(255, 230, 170, 0.9)";
+      g.beginPath();
+      g.ellipse(168, 30, 6, 2.2, 0, 0, Math.PI * 2);
+      g.fill();
+
+      g.fillStyle = "#6d4a32";
+      g.fillRect(86, 18, 148, 5);
+      for (let i = 0; i < 5; i++) {
+        const gx = 96 + i * 26;
+        g.fillStyle = "rgba(255,255,255,0.16)";
+        g.beginPath();
+        g.moveTo(gx + 4, 23);
+        g.lineTo(gx + 2, 36);
+        g.lineTo(gx + 10, 36);
+        g.lineTo(gx + 8, 23);
+        g.fill();
+        g.strokeStyle = "rgba(255,255,255,0.35)";
+        g.stroke();
+      }
+
+      g.fillStyle = "#5c3b28";
+      g.fillRect(214, 40, 52, 34);
+      g.fillStyle = "#e7d3b0";
+      g.fillRect(218, 44, 44, 26);
+      g.fillStyle = "#2a2118";
+      g.beginPath();
+      g.ellipse(232, 58, 7, 5, -0.2, 0, Math.PI * 2);
+      g.fill();
+      g.beginPath();
+      g.moveTo(238, 56);
+      g.lineTo(248, 52);
+      g.lineTo(246, 60);
+      g.fill();
+      g.fillStyle = "#f4e6c8";
+      g.beginPath();
+      g.arc(230, 56, 1.1, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#8d5a34";
+      cabText(g, "PICA-PAU", 222, 62, 5.5, "#8d5a34", "left");
+
+      g.fillStyle = "#1a120e";
+      g.beginPath();
+      g.moveTo(0, 36);
+      g.lineTo(36, 30);
+      g.lineTo(36, 112);
+      g.lineTo(0, 118);
+      g.fill();
+      const alley = g.createLinearGradient(0, 40, 30, 40);
+      alley.addColorStop(0, "#c9864a");
+      alley.addColorStop(1, "#1a120e");
+      g.fillStyle = alley;
+      g.fillRect(2, 46, 22, 58);
+      g.fillStyle = "#2a1c14";
+      g.fillRect(0, 34, 8, 84);
+      for (let i = 0; i < Math.min(3, q); i++) {
+        g.fillStyle = i === 0 ? "#f0c9a0" : "#c9a07a";
+        g.beginPath();
+        g.arc(14, 86 - i * 14, 4.2, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "#3a2418";
+        g.fillRect(10, 90 - i * 14, 8, 8);
+      }
+
+      const door = g.createLinearGradient(278, 28, 320, 28);
+      door.addColorStop(0, "#8a5a34");
+      door.addColorStop(1, "#4e301c");
+      g.fillStyle = "#3a2418";
+      g.fillRect(274, 26, 46, 90);
+      g.fillStyle = door;
+      g.beginPath();
+      g.roundRect(282, 32, 32, 78, 2);
+      g.fill();
+      g.strokeStyle = "rgba(90, 50, 24, 0.7)";
+      g.lineWidth = 1;
+      g.strokeRect(286, 38, 24, 28);
+      g.strokeRect(286, 70, 24, 32);
+      g.fillStyle = "#e6c56a";
+      g.beginPath();
+      g.arc(308, 74, 2.4, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#e8d2a4";
+      g.beginPath();
+      g.roundRect(294, 8, 18, 10, 2);
+      g.fill();
+      g.fillStyle = "#8a6230";
+      g.fillRect(301, 4, 3, 14);
+      if (!person && state.lineRun) {
+        g.fillStyle = "rgba(61, 206, 110, 0.45)";
+        g.beginPath();
+        g.arc(298, 72, 16 + Math.sin(tick / 8) * 2, 0, Math.PI * 2);
+        g.fill();
+        cabText(g, "FIM", 286, 98, 8, "#e8ffe8");
+      }
+
+      if (person && ui.visitor) {
+        const shove = c.drag != null && ui.mx != null ? Math.max(0, Math.min(36, ui.mx - c.drag)) : 0;
+        const slide = (1 - (c.enter || 0)) * 36;
+        const mood = c.listening ? "whisper" : (over ? "angry" : (inZone ? "happy" : "talk"));
+        g.fillStyle = "rgba(20, 10, 6, 0.35)";
+        g.beginPath();
+        g.ellipse(160 + shove * 0.3, 112, 28, 6, 0, 0, Math.PI * 2);
+        g.fill();
+        drawGuy(g, ui.visitor, 128 + shove * 0.55 + slide, 14, 3.7, mood, "");
+      }
+
+      const wood = g.createLinearGradient(0, 108, 0, 180);
+      wood.addColorStop(0, "#c48a52");
+      wood.addColorStop(0.08, "#8a5a32");
+      wood.addColorStop(0.4, "#6a4126");
+      wood.addColorStop(1, "#2c1810");
+      g.fillStyle = wood;
+      g.beginPath();
+      g.moveTo(0, 116);
+      g.lineTo(320, 116);
+      g.lineTo(320, 180);
+      g.lineTo(0, 180);
+      g.fill();
+      g.fillStyle = "rgba(255, 226, 180, 0.55)";
+      g.fillRect(0, 112, 320, 5);
+      g.strokeStyle = "rgba(70, 36, 16, 0.28)";
+      g.lineWidth = 1;
+      for (let i = 0; i < 7; i++) {
+        g.beginPath();
+        g.moveTo(0, 128 + i * 7);
+        g.quadraticCurveTo(160, 124 + i * 7, 320, 130 + i * 7);
+        g.stroke();
+      }
+
+      function paintBottle(x, liquid, selected, empty) {
+        g.save();
+        g.translate(x, 114);
+        g.fillStyle = "rgba(0,0,0,0.28)";
+        g.beginPath();
+        g.ellipse(16, 52, 11, 3, 0, 0, Math.PI * 2);
+        g.fill();
+        if (selected) {
+          g.fillStyle = "rgba(255, 214, 120, 0.35)";
+          g.beginPath();
+          g.ellipse(16, 50, 14, 5, 0, 0, Math.PI * 2);
+          g.fill();
+        }
+        g.beginPath();
+        g.moveTo(11, 16);
+        g.quadraticCurveTo(4, 20, 5, 30);
+        g.lineTo(6, 44);
+        g.quadraticCurveTo(8, 54, 16, 54);
+        g.quadraticCurveTo(24, 54, 26, 44);
+        g.lineTo(27, 30);
+        g.quadraticCurveTo(28, 20, 21, 16);
+        g.closePath();
+        if (empty) {
+          g.fillStyle = "rgba(210, 220, 200, 0.22)";
+          g.fill();
+          g.strokeStyle = "rgba(255,255,255,0.35)";
+          g.lineWidth = 1;
+          g.stroke();
+        } else {
+          const body = g.createLinearGradient(4, 0, 28, 0);
+          body.addColorStop(0, "rgba(255,255,255,0.45)");
+          body.addColorStop(0.18, liquid);
+          body.addColorStop(0.78, liquid);
+          body.addColorStop(1, "rgba(0,0,0,0.28)");
+          g.fillStyle = body;
+          g.fill();
+        }
+        g.fillStyle = empty ? "rgba(220,230,210,0.35)" : liquid;
+        g.fillRect(13, 6, 6, 12);
+        g.fillStyle = "#c9894a";
+        g.beginPath();
+        g.roundRect(13.5, 1, 5, 6, 1);
+        g.fill();
+        g.fillStyle = "rgba(255,255,255,0.55)";
+        g.fillRect(9, 24, 2, 16);
+        g.fillStyle = "rgba(255, 248, 230, 0.9)";
+        g.beginPath();
+        g.roundRect(9, 32, 14, 9, 1);
+        g.fill();
+        g.restore();
+      }
+      paintBottle(66, "#e2a84a", c.bottle !== "golpe", false);
+      paintBottle(214, "#2f8a44", c.bottle === "golpe", !peekIllegal());
+
+      const legalN = ["bagaco", "imperial", "vinho", "tremocos"].reduce((n, id) => n + (state.stock[id] || 0), 0);
+      const dirtyN = ["carne", "vinho", "cigarros"].reduce((n, id) => n + ((state.illegal && state.illegal[id]) || 0), 0);
+      cabText(g, String(legalN), 76, 168, 8, "#f6efe4");
+      cabText(g, String(dirtyN), 224, 168, 8, dirtyN ? "#c8f0cf" : "#a89080");
+
+      const personBook = person ? secretsForPerson(person)[0] : null;
+      if (personBook) {
+        g.save();
+        g.translate(30, 128);
+        g.rotate(-0.12);
+        g.fillStyle = "#f4e4ee";
+        g.beginPath();
+        g.roundRect(0, 0, 26, 18, 1.5);
+        g.fill();
+        g.fillStyle = "#a84878";
+        g.fillRect(0, 0, 3, 18);
+        g.strokeStyle = "#e7c0d4";
+        g.beginPath();
+        g.moveTo(7, 5);
+        g.lineTo(22, 5);
+        g.moveTo(7, 9);
+        g.lineTo(20, 9);
+        g.stroke();
+        g.restore();
+      }
+
+      const gx = 146;
+      const gy = 116;
+      const gw = 34;
+      const gh = 46;
+      function glassPath() {
+        g.beginPath();
+        g.moveTo(gx, gy + 4);
+        g.lineTo(gx + 7, gy + gh);
+        g.quadraticCurveTo(gx + gw / 2, gy + gh + 5, gx + gw - 7, gy + gh);
+        g.lineTo(gx + gw, gy + 4);
+        g.quadraticCurveTo(gx + gw / 2, gy - 2, gx, gy + 4);
+        g.closePath();
+      }
+      g.fillStyle = "rgba(0,0,0,0.22)";
+      g.beginPath();
+      g.ellipse(gx + gw / 2, gy + gh + 4, 10, 3, 0, 0, Math.PI * 2);
+      g.fill();
+      g.save();
+      glassPath();
+      g.clip();
+      const liquid = Math.max(0, Math.min(1, fill));
+      const lh = (gh - 6) * liquid;
+      if (lh > 0.5) {
+        const juice = g.createLinearGradient(gx, gy, gx + gw, gy);
+        const col = c.bottle === "golpe" ? "#3f9a52" : "#e2b15a";
+        juice.addColorStop(0, "rgba(255,255,255,0.45)");
+        juice.addColorStop(0.25, col);
+        juice.addColorStop(1, col);
+        g.fillStyle = juice;
+        g.fillRect(gx, gy + gh - lh, gw, lh + 8);
+        g.fillStyle = "rgba(255,255,255,0.45)";
+        g.beginPath();
+        g.ellipse(gx + gw / 2, gy + gh - lh, 8, 2.2, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.restore();
+      glassPath();
+      g.strokeStyle = inZone ? "rgba(120, 230, 150, 0.95)" : "rgba(255,255,255,0.62)";
+      g.lineWidth = inZone ? 2 : 1.4;
+      g.stroke();
+      g.strokeStyle = "rgba(255,255,255,0.75)";
+      g.lineWidth = 1.5;
+      g.beginPath();
+      g.moveTo(gx + 8, gy + 8);
+      g.lineTo(gx + 11, gy + gh - 8);
+      g.stroke();
+      g.fillStyle = "rgba(255,255,255,0.28)";
+      g.beginPath();
+      g.ellipse(gx + gw / 2, gy + 4, gw / 2 - 2, 3, 0, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = over ? "#ff5a4a" : "#3dce6e";
+      g.lineWidth = 1.6;
+      const mark = (f) => gy + 6 + (gh - 8) * (1 - f);
+      g.beginPath();
+      g.moveTo(gx + gw + 2, mark(0.9));
+      g.lineTo(gx + gw + 7, mark(0.9));
+      g.moveTo(gx + gw + 2, mark(0.72));
+      g.lineTo(gx + gw + 7, mark(0.72));
+      g.stroke();
+      if (over && person) cabText(g, "RECUA", gx - 6, gy - 12, 9, "#ff6a5a");
+      if (c.pour) {
+        const stream = c.bottle === "golpe" ? "rgba(80, 190, 100, 0.85)" : "rgba(226, 180, 90, 0.9)";
+        g.strokeStyle = stream;
+        g.lineWidth = 2.4;
+        g.beginPath();
+        g.moveTo(gx + 16, gy - 16);
+        g.quadraticCurveTo(gx + 18, gy - 4, gx + 15, gy + 2);
+        g.stroke();
+      }
+
+      const dial = (f) => Math.PI + Math.max(0, Math.min(1, f)) * Math.PI;
+      const cx = 196;
+      const cy = 158;
+      g.fillStyle = "#d7b56a";
+      g.beginPath();
+      g.arc(cx, cy, 15, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#1a120e";
+      g.beginPath();
+      g.arc(cx, cy, 12, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = "#3dce6e";
+      g.lineWidth = 3.4;
+      g.beginPath();
+      g.arc(cx, cy, 9, dial(0.72), dial(0.9), true);
+      g.stroke();
+      const na = dial(Math.max(0.02, Math.min(0.98, fill)));
+      g.strokeStyle = over ? "#ff5a4a" : "#f6efe4";
+      g.lineWidth = 1.7;
+      g.beginPath();
+      g.moveTo(cx, cy);
+      g.lineTo(cx + Math.cos(na) * 10, cy + Math.sin(na) * 10);
+      g.stroke();
+      g.fillStyle = fill < 0.05 ? "#6a5344" : over ? "#ff4d4d" : inZone ? "#3dce6e" : "#d4553c";
+      g.beginPath();
+      g.arc(cx, cy, 2.4, 0, Math.PI * 2);
+      g.fill();
+      if ((c.dwell || 0) > 0.02) {
+        const need = inZone ? 0.34 : 0.72;
+        g.strokeStyle = inZone ? "#f4fff6" : "#e6a23a";
+        g.lineWidth = 2;
+        g.beginPath();
+        g.arc(cx, cy, 6, -Math.PI / 2, -Math.PI / 2 + Math.min(1, c.dwell / need) * Math.PI * 2);
+        g.stroke();
+      }
+
+      if (c.pour || c.brake) {
+        g.fillStyle = "#f0b892";
+        g.beginPath();
+        g.ellipse(c.brake ? 156 : 168, 172, 16, 8, c.brake ? 0.5 : -0.4, 0, Math.PI * 2);
+        g.fill();
+        g.beginPath();
+        g.roundRect(c.brake ? 146 : 154, 156, 12, 16, 5);
+        g.fill();
+      }
+
+      const left = Math.max(0, (c.waitMax || 8.5) - (c.wait || 0));
+      const frac = person ? left / (c.waitMax || 8.5) : 0;
+      const urgent = person && frac < 0.28;
+      g.fillStyle = "rgba(28, 16, 10, 0.72)";
+      g.beginPath();
+      g.roundRect(86, 6, 156, 12, 6);
+      g.fill();
+      if (person) {
+        g.fillStyle = urgent ? "#e23d3d" : frac < 0.55 ? "#e6a23a" : "#3dce6e";
+        g.beginPath();
+        g.roundRect(88, 8, Math.max(4, 132 * frac), 8, 4);
+        g.fill();
+      }
+      cabText(g, person ? left.toFixed(1) : "—", 224, 7, 8, urgent ? "#ffd0cc" : "#f6efe4", "left");
+
+      if (person && (c.listen || 0) > 0.02) {
+        g.fillStyle = "rgba(20,10,8,0.55)";
+        g.beginPath();
+        g.roundRect(112, 100, 96, 7, 3);
+        g.fill();
+        g.fillStyle = "#e080c8";
+        g.beginPath();
+        g.roundRect(113, 101, 94 * Math.min(1, c.listen), 5, 2);
+        g.fill();
+      }
+
+      if (c.line && person && !(c.flashT > 0)) {
+        const said = wrapWords(c.line, 36).slice(0, 3);
+        const bh = 10 + said.length * 12;
+        const by = 78;
+        g.fillStyle = "rgba(255, 248, 236, 0.96)";
+        g.beginPath();
+        g.roundRect(36, by, 248, bh, 8);
+        g.fill();
+        g.beginPath();
+        g.moveTo(148, by);
+        g.lineTo(156, by - 7);
+        g.lineTo(164, by);
+        g.fill();
+        said.forEach((ln, i) => cabText(g, ln, 160, by + 5 + i * 12, 9, "#2a2118", "center"));
+      }
+      if (c.flash) {
+        const rows = wrapWords(c.flash, 36).slice(0, 2);
+        const bh = 8 + rows.length * 13;
+        g.fillStyle = "rgba(255, 246, 230, 0.96)";
+        g.beginPath();
+        g.roundRect(28, 66, 264, bh, 8);
+        g.fill();
+        rows.forEach((ln, i) => cabText(g, ln, 160, 70 + i * 13, 11, "#2a2118", "center"));
+      }
+      g.textAlign = "left";
+      g.textBaseline = "alphabetic";
+    }
+
+    function openCustomer() {
+      if (!state.pending) {
+        if (!state.queue.length) return;
+        state.pending = state.queue.shift();
+        if (state.pending === "albertina") state.tutorialDone = true;
+      }
+      const person = personById(state.pending);
+      if (!person) {
+        state.pending = null;
+        render();
+        return;
+      }
+      ui.mode = "talk";
+      ui.scene = "tasca";
+      ui.visitor = person.sprite;
+      ui.arrive = 0;
+      sfx("glass");
+      touch();
+      render();
+    }
+
+    function doListen(person) {
+      addPat(-RULES.listenPat);
+      const fresh = learnGossip(person.gossip);
+      if (fresh) popup("CADERNO", "#ff55ff");
+      finishCustomer(fresh ? "Ficou no caderno." : "Essa já a tinhas.", "blip", "ouvir");
+    }
+
+    function doPalha(person) {
+      const itemId = consumeLegal();
+      const tip = Math.floor(state.reputation / 40);
+      let pay = 1 + tip;
+      if (!itemId) addRep(-4);
+      else {
+        pay = LEGAL[itemId].sell + tip;
+        if (person.id === "presidente") addRep(2);
+        if (person.id === "manel") addPat(4);
+      }
+      addMoney(pay);
+      if (person.id === "fiscal") addHeat(-2);
+      finishCustomer(itemId ? "Copo e acabou-se." : "Só saiu água.", itemId ? "register" : "glass", "palha", !itemId);
+    }
+
+    function doMarosca(person) {
+      const itemId = consumeIllegal();
+      if (!itemId) return;
+      const item = ILLEGAL[itemId];
+      const tip = Math.floor(state.reputation / 40);
+      const pay = item.sell + tip + (person.id === "beto" || person.id === "cripto" ? 6 : 0);
+      let heat = item.heat;
+      if (person.id === "fiscal") heat += 18;
+      addMoney(pay);
+      addHeat(heat);
+      state.crimesToday += 1;
+      state.stats.maroscas += 1;
+      state.sickRolls.push({ who: person.name, weight: item.sick });
+      finishCustomer(person.id === "fiscal" ? "Ele cheirou o golpe." : "Bebeu. Vai doer.", "coin", "marosca", false, person.id === "fiscal");
+    }
+
+    function doKick(person) {
+      addPat(person.id === "manel" ? 8 : RULES.kickPat);
+      addRep(person.id === "presidente" || person.id === "padre" ? -12 : RULES.kickRep);
+      if (person.id === "fiscal") addHeat(12);
+      if (person.id === "presidente") addHeat(6);
+      state.stats.kicks += 1;
+      finishCustomer("Porta.", "door", "rua");
+    }
+
+    function doBlackmail(person, secret) {
+      secret.used = true;
+      popup(secret.title, "#ff55ff");
+      if (person.id === "presidente") {
+        addMoney(70);
+        addRep(-3);
+        addHeat(-4);
+      } else if (person.id === "fiscal") {
+        addHeat(-24);
+        state.sickRolls = state.sickRolls.filter((s) => s.who !== person.name);
+      } else {
+        addMoney(30);
+      }
+      finishCustomer("O caderno fala.", person.id === "fiscal" ? "blip" : "coin", "caderno");
+    }
+
+    function buyLegal(id) {
+      const item = LEGAL[id];
+      if (state.money < item.buy) return;
+      addMoney(-item.buy);
+      state.stock[id] += item.pack;
+      popup("+" + item.pack, "#55ffff");
+      glance("coin");
+    }
+
+    function buyIllegal(id) {
+      const item = ILLEGAL[id];
+      if (state.money < item.buy) return;
+      addMoney(-item.buy);
+      state.illegal[id] += item.pack;
+      popup("+" + item.pack + " CAVE", "#55ff55");
+      glance("coin");
+    }
+
+    function buySlot() {
+      if (state.money < SLOT.buy) return;
+      addMoney(-SLOT.buy);
+      state.slots += 1;
+      popup("SLOT", "#ff55ff");
+      glance("register");
+    }
+
+    function bribeMayor() {
+      if (state.money < RULES.bribeCost) return;
+      addMoney(-RULES.bribeCost);
+      addHeat(-10);
+      state.bribeDays += RULES.bribeDays;
+      popup(state.bribeDays + " NOITES", "#55ff55");
+      glance("coin");
+    }
+
+    function honestLicense() {
+      if (state.money < RULES.licenseCost) return;
+      addMoney(-RULES.licenseCost);
+      addRep(4);
+      addHeat(-3);
+      popup("CARIMBO", "#55ffff");
+      glance("register");
+    }
+
+    function useAtJunta(secret) {
+      secret.used = true;
+      state.bribeDays += 5;
+      addHeat(-8);
+      addRep(-2);
+      popup("SEM TAXA", "#ff55ff");
+      glance("blip");
+    }
+
+    function sellSecret(secret) {
+      secret.used = true;
+      addMoney(RULES.gossipPrice);
+      addRep(-3);
+      popup("SEGREDO", "#ff55ff");
+      glance("coin");
+    }
+
+    function borrow(deal) {
+      addMoney(deal.cash);
+      state.debt += deal.debt;
+      popup("DÍVIDA +" + deal.debt, "#ff5555");
+      glance("coin");
+    }
+
+    function payDebt(amount) {
+      const pay = Math.min(amount, state.debt, state.money);
+      if (pay <= 0) return;
+      addMoney(-pay);
+      state.debt -= pay;
+      popup(state.debt > 0 ? "AINDA DEVE" : "LIVRE", state.debt > 0 ? "#ff5555" : "#55ff55");
+      glance("register");
+    }
+
+    function bribeGnr(kind) {
+      if (kind === "presunto") {
+        if (state.stock.presunto <= 0) return;
+        state.stock.presunto -= 1;
+        addHeat(-22);
+        popup("PRESUNTO", "#ffff55");
+      } else if (kind === "bagaco") {
+        if (state.stock.bagaco <= 0) return;
+        state.stock.bagaco -= 1;
+        addHeat(-14);
+        popup("BAGAÇO", "#ffff55");
+      } else {
+        if (state.money < RULES.gnrCash) return;
+        addMoney(-RULES.gnrCash);
+        addHeat(-18);
+        popup("NOTAS", "#ffff55");
+      }
+      glance("blip");
+    }
+
+    function denounce() {
+      addHeat(-8);
+      addRep(-6);
+      addMoney(20);
+      if (Math.random() < 0.35) {
+        addHeat(24);
+        popup("CORREU MAL", "#ff5555");
+      } else {
+        popup("DENÚNCIA", "#55ffff");
+      }
+      glance("blip");
+    }
+
+    function useAtGnr(secret) {
+      secret.used = true;
+      addHeat(-35);
+      state.sickRolls = [];
+      popup("LIVRO FECHADO", "#55ff55");
+      glance("blip");
+    }
+
+    function endDay() {
+      ui.batch = true;
+      const lines = [];
+      const before = state.money;
+      if (state.pending) {
+        addRep(-2);
+        lines.push("Deixaste um cliente a meio da frase. Ele foi terminá-la ao Copo Sujo.");
+        state.pending = null;
+      }
+      if (state.queue.length) {
+        const n = state.queue.length;
+        addRep(-Math.min(6, n));
+        lines.push("Fechaste com " + (n === 1 ? "uma pessoa" : n + " pessoas") + " ainda à porta. A fila tem orgulho.");
+        state.queue = [];
+      }
+
+      if (state.slots > 0) {
+        const gain = SLOT.income * state.slots;
+        addMoney(gain);
+        addHeat(SLOT.heat * state.slots);
+        lines.push("As slots tossiram " + euro(gain) + " e deixaram o calor mais gordo.");
+      }
+
+      if (state.bribeDays > 0) {
+        state.bribeDays -= 1;
+        lines.push("A Junta fez vista grossa esta noite. O Hilário anda distraído com o carro da Câmara.");
+      } else if (state.money > 0) {
+        const tax = Math.round(state.money * RULES.tax);
+        if (tax > 0) {
+          addMoney(-tax);
+          lines.push("Contribuição voluntária da freguesia: " + euro(tax) + ". O voluntariado foi deles.");
+        }
+      }
+
+      if (state.debt > 0) {
+        const juros = interestDue();
+        if (state.money >= juros) {
+          addMoney(-juros);
+          lines.push("O Sr. Matos levou " + euro(juros) + " de juros. Sorriu com os três dentes todos.");
+        } else {
+          const emFalta = juros - state.money;
+          state.money = 0;
+          state.debt += emFalta;
+          addRep(-14);
+          addPat(-18);
+          state.montraPartida = true;
+          lines.push("Não tinhas para os juros. Os capangas partiram a montra e escreveram o resto na dívida: mais " + euro(emFalta) + ".");
+        }
+      }
+
+      const ultima = lines.length ? lines[lines.length - 1] : "";
+      if (state.montraPartida && ultima.indexOf("partiram a montra") === -1) {
+        if (state.money >= 40) {
+          addMoney(-40);
+          state.montraPartida = false;
+          lines.push("Pagaste 40 € ao vidraceiro. Ele disse que isto é recorrente, como quem diagnostica um casamento.");
+        } else {
+          addRep(-3);
+          lines.push("A montra continua aberta ao público e aos pardais. A reputação sente a corrente de ar.");
+        }
+      }
+
+      let soundName = "door";
+      let shake = false;
+      const g = goal();
+      if (state.money >= g.cost) {
+        const kept = Math.max(15, Math.round(state.money * 0.12));
+        const lost = state.money - kept;
+        state.money = kept;
+        state.upgrades.push(g.id);
+        state.objectiveIndex += 1;
+        state.disasters += 1;
+        addHeat(15);
+        state.sickRolls = [];
+        shake = true;
+        soundName = "disaster";
+        lines.push(g.disaster);
+        lines.push("O objectivo «" + g.title + "» durou o tempo de um brinde. " + euro(lost) + " desapareceram em estuque, advogados e vergonha.");
+        const nxt = goal();
+        lines.push("Novo objectivo, porque isto não acaba: " + nxt.title + " (" + euro(nxt.cost) + ").");
+      } else {
+        if (state.heat >= 40 && Math.random() * 100 < (state.heat - 30)) {
+          const lost = Math.round(state.money * 0.8);
+          addMoney(-lost);
+          state.stats.raids += 1;
+          const taken = seizeGoods();
+          addHeat(-30);
+          soundName = "siren";
+          shake = true;
+          lines.push("Rusga. A ASAE entrou como se o tasco fosse um cofre. Levaram " + euro(lost) + " (80% da carteira) e " + taken + ".");
+        }
+        const peso = state.sickRolls.reduce((sum, s) => sum + s.weight, 0);
+        if (peso > 0 && Math.random() < Math.min(0.72, 0.22 * peso)) {
+          const fine = 70 + Math.round(40 * state.sickRolls.length);
+          const antes = state.money;
+          addMoney(-fine);
+          const pago = antes - state.money;
+          addRep(-8);
+          addHeat(8);
+          const who = state.sickRolls[0].who;
+          lines.push(who + " foi parar ao hospital. O juiz chamou ao petisco «experiência não autorizada». Indemnização: " + euro(pago) + (pago < fine ? " (o resto ficou no ar, mas a fama pagou)" : "") + ".");
+          if (soundName !== "siren") soundName = "disaster";
+        }
+        state.sickRolls = [];
+      }
+
+      let cool = 5;
+      if (state.slots > 0) cool = 2;
+      if (state.crimesToday > 0) cool = 0;
+      addHeat(-cool);
+      state.crimesToday = 0;
+
+      const after = state.money;
+      if (after >= before) lines.push("Deitaste-te com mais " + euro(after - before) + " do que tinhas ao fechar a porta.");
+      else lines.push("A noite levou " + euro(before - after) + ". O travesseiro não dá troco.");
+
+      const kind = collapsed();
+      if (kind) {
+        openOver(kind, lines);
+        return;
+      }
+
+      const caso = currentTale();
+      if (caso && state.tale && state.tale.step < caso.steps.length) {
+        addRep(-6);
+        addPat(-4);
+        if (caso.ignoreHeat) addHeat(caso.ignoreHeat);
+        if (caso.ignoreDebt) state.debt += caso.ignoreDebt;
+        lines.push(caso.ignore);
+      }
+      state.tale = null;
+      state.carry = null;
+      state.taleQuiet = false;
+      state.day += 1;
+      freshQueue();
+      const nxt = goal();
+      lines.push("Amanhece o dia " + state.day + ". Continuas atrás de «" + nxt.title + "», que custa " + euro(nxt.cost) + ".");
+      showText("Fechou-se a porta", lines, [{
+        label: "Abrir a tasca outra vez",
+        fn: () => arrive("tasca", true)
+      }], "tasca", soundName, shake);
+    }
+
+    function seizeGoods() {
+      if (state.slots > 0) {
+        state.slots -= 1;
+        return "uma slot, que foi para análise e não volta";
+      }
+      for (const id of ["carne", "vinho", "cigarros"]) {
+        if (state.illegal[id] > 0) {
+          const n = state.illegal[id];
+          state.illegal[id] = 0;
+          return "o stock de " + ILLEGAL[id].name.toLowerCase() + " (" + n + ")";
+        }
+      }
+      if (state.stock.vinho > 0 || state.stock.bagaco > 0) {
+        state.stock.vinho = 0;
+        state.stock.bagaco = 0;
+        return "o que havia de mais honesto, por engano, incluindo o bagaço";
+      }
+      return "um queijo que não tinha culpa de nada";
+    }
+
+    function talkChoices() {
+      const person = personById(state.pending);
+      if (!person) return [{ label: "Voltar", fn: () => arrive("tasca", true) }];
+      const illegal = peekIllegal();
+      const choices = [
+        { label: "Ouvir", hint: "−" + RULES.listenPat + " calma. Pode sair fofoca.", fn: () => doListen(person) },
+        { label: "Palha", hint: "Copo rápido. Sem stock, a fama desce.", fn: () => doPalha(person) },
+        {
+          label: "Marosca",
+          hint: illegal ? "+" + euro(ILLEGAL[illegal].sell) + " e sobe o calor." : "A cave está limpa.",
+          disabled: !illegal,
+          fn: () => doMarosca(person)
+        },
+        { label: "Pôr na rua", hint: "Ganhas calma. Perdes fama.", fn: () => doKick(person) }
+      ];
+      secretsForPerson(person).forEach((secret) => {
+        choices.push({
+          label: "Caderno",
+          hint: "Gasta esta página do caderno. Não dá para a usares outra vez.",
+          fn: () => doBlackmail(person, secret)
+        });
+      });
+      return choices;
+    }
+
+    function locationChoices() {
+      const poor = "Não tens dinheiro para isto.";
+      if (state.location === "tasca") {
+        const fila = state.pending ? "A meio da conversa" : (state.queue.length ? state.queue.length + " na fila" : "A fila acabou.");
+        return [
+          {
+            label: state.pending ? "Voltar" : "Atender",
+            hint: fila,
+            disabled: !state.pending && state.queue.length === 0,
+            fn: openCustomer
+          },
+          {
+            label: "Dormir",
+            hint: "Fecha o dia.",
+            fn: endDay
+          }
+        ];
+      }
+      if (state.location === "garagem") {
+        const items = Object.keys(ILLEGAL).map((id) => {
+          const item = ILLEGAL[id];
+          return {
+            label: ({ vinho: "Vinho batizado", cigarros: "Cigarros", carne: "Carne" }[id] || item.name) + " (" + euro(item.buy) + ")",
+            hint: item.pack + " doses. Venda a " + euro(item.sell) + ". Calor +" + item.heat + " por dose.",
+            disabled: state.money < item.buy,
+            fn: () => buyIllegal(id)
+          };
+        });
+        items.push({
+          label: "Slots (" + euro(SLOT.buy) + ")",
+          hint: "+" + euro(SLOT.income) + " por noite e calor +" + SLOT.heat + ". A ASAE ouve o tilintar.",
+          disabled: state.money < SLOT.buy,
+          fn: buySlot
+        });
+        return items;
+      }
+      if (state.location === "junta") {
+        const list = [
+          {
+            label: "Subornar o Presidente (" + euro(RULES.bribeCost) + ")",
+            hint: "Baixa o calor e suspende a contribuição por " + RULES.bribeDays + " noites.",
+            disabled: state.money < RULES.bribeCost,
+            fn: bribeMayor
+          },
+          {
+            label: "Pedir licença pelo caminho direito (" + euro(RULES.licenseCost) + ")",
+            hint: "Sobe um pouco a reputação. Não chega para o objectivo.",
+            disabled: state.money < RULES.licenseCost,
+            fn: honestLicense
+          }
+        ];
+        unusedSecrets("junta").forEach((secret) => {
+          list.push({
+            label: "Chantagear a Junta: " + secret.title,
+            hint: "Sem taxa. Suspende a contribuição e baixa o calor. A página gasta-se.",
+            fn: () => useAtJunta(secret)
+          });
+        });
+        if (!list[0].disabled) list[0].hint += "";
+        else if (state.money < RULES.bribeCost) list[0].hint = poor;
+        return list;
+      }
+      if (state.location === "feira") {
+        const list = Object.keys(LEGAL).map((id) => {
+          const item = LEGAL[id];
+          return {
+            label: ({ imperial: "Imperiais", bagaco: "Bagaço", tremocos: "Tremoços", vinho: "Vinho", presunto: "Presunto" }[id] || item.name) + " (" + euro(item.buy) + ")",
+            hint: item.short === "presuntos" ? "Não se bebe. Serve para comover a GNR." : "Traz " + item.pack + " para o balcão. Cada dose vende-se a " + euro(item.sell) + ".",
+            disabled: state.money < item.buy,
+            fn: () => buyLegal(id)
+          };
+        });
+        unusedSecrets().forEach((secret) => {
+          list.push({
+            label: "Vender fofoca: " + secret.title,
+            hint: euro(RULES.gossipPrice) + ". Queima a página. A Junta pagava melhor em medo.",
+            fn: () => sellSecret(secret)
+          });
+        });
+        return list;
+      }
+      if (state.location === "matos") {
+        const loans = [
+          { cash: 200, debt: 270 },
+          { cash: 500, debt: 720 },
+          { cash: 1000, debt: 1550 }
+        ].map((deal) => ({
+          label: "Pedir " + euro(deal.cash) + " emprestados",
+          hint: "A dívida sobe " + euro(deal.debt) + ". Os juros de amanhã sobem com ela.",
+          fn: () => borrow(deal)
+        }));
+        loans.push({
+          label: "Amortizar 100 €",
+          hint: state.debt <= 0 ? "Não deves nada. Aproveita a sensação." : "Paga até 100 €, ou o que a carteira deixar.",
+          disabled: state.debt <= 0 || state.money <= 0,
+          fn: () => payDebt(100)
+        });
+        loans.push({
+          label: "Pagar a dívida toda",
+          hint: state.debt <= 0 ? "Estás quite." : "Custa " + euro(state.debt) + ".",
+          disabled: state.debt <= 0 || state.money < state.debt,
+          fn: () => payDebt(state.debt)
+        });
+        return loans;
+      }
+      const list = [
+        {
+          label: "Oferecer presunto",
+          hint: state.stock.presunto > 0 ? "Calor −22. Tens " + state.stock.presunto + "." : "Não tens presunto. A feira tem.",
+          disabled: state.stock.presunto <= 0,
+          fn: () => bribeGnr("presunto")
+        },
+        {
+          label: "Oferecer bagaço",
+          hint: state.stock.bagaco > 0 ? "Calor −14. Tens " + state.stock.bagaco + "." : "O garrafão está vazio.",
+          disabled: state.stock.bagaco <= 0,
+          fn: () => bribeGnr("bagaco")
+        },
+        {
+          label: "Subornar em dinheiro (" + euro(RULES.gnrCash) + ")",
+          hint: "Calor −18.",
+          disabled: state.money < RULES.gnrCash,
+          fn: () => bribeGnr("dinheiro")
+        },
+        {
+          label: "Denunciar o Copo Sujo",
+          hint: "Umas notas, menos calor, menos fama. Às vezes corre ao contrário.",
+          fn: denounce
+        }
+      ];
+      unusedSecrets("gnr").forEach((secret) => {
+        list.push({
+          label: "Usar o caderno: " + secret.title,
+          hint: "Apaga bastante calor e um susto de hospital. Gasta a página.",
+          fn: () => useAtGnr(secret)
+        });
+      });
+      return list;
+    }
+
+    function notebookChoices() {
+      const alive = state.notebook.filter((s) => !s.used);
+      const list = [];
+      if (alive.length > 1) list.push({ label: "Outra página", fn: () => { ui.note = (ui.note || 0) + 1; sfx("blip"); render(); } });
+      list.push({ label: "Fechar", fn: () => arrive(state.location, true) });
+      list.push({ label: "Novo jogo", fn: confirmNew });
+      return list;
+    }
+
+    function titleChoices() {
+      const save = peekSave();
+      return [
+        {
+          label: "Novo jogo",
+          hint: save ? "Apaga a gravação deste browser." : "O Zé ainda acha que o bilhar é uma questão de esforço.",
+          fn: () => (save ? confirmNew() : startNew())
+        },
+        {
+          label: "Continuar",
+          hint: save ? "Dia " + save.day + ", " + euro(save.money) + " na carteira, dívida " + euro(save.debt) + "." : "Não há gravação neste browser.",
+          disabled: !save,
+          fn: continueGame
+        }
+      ];
+    }
+
+    function moreBeats() {
+      const lines = ui.lines || [];
+      return (ui.mode === "result" || ui.mode === "over" || ui.mode === "confirm") && (ui.beat || 0) < lines.length - 1;
+    }
+
+    function nextBeat() {
+      ui.beat = (ui.beat || 0) + 1;
+      sfx("blip");
+      render();
+    }
+
+    function currentChoices() {
+      if (ui.mode === "cab" || ui.mode === "act") return [];
+      if (moreBeats()) return [{ label: "Seguinte", fn: nextBeat }];
+      if (ui.mode === "title") return titleChoices();
+      if (ui.mode === "result" || ui.mode === "over" || ui.mode === "confirm") return ui.resultChoices || [];
+      if (ui.mode === "talk") return talkChoices();
+      if (ui.mode === "notebook") return notebookChoices();
+      if (ui.scene === "rua") return [];
+      return locationChoices();
+    }
+
+    function blurb() {
+      const loc = state.location;
+      if (loc === "tasca") {
+        const n = (state.queue || []).length;
+        return { title: "O Pica-Pau", line: n || state.pending ? "Anda até ao cliente. Copo, garrafa ou porta fazem o resto." : "A tasca sossegou. A porta fecha o dia." };
+      }
+      if (loc === "garagem") return { title: "Zequinha", line: "Clica na mercadoria. Sem factura." };
+      if (loc === "junta") return { title: "Junta", line: state.bribeDays > 0 ? "Distraídos por " + state.bribeDays + " noites." : "Suborno, papel ou caderno." };
+      if (loc === "feira") return { title: "Feira", line: "Compras legais. Fofoca, se a quiseres queimar." };
+      if (loc === "matos") return { title: "Sr. Matos", line: "Deves " + euro(state.debt) + ". Juros: " + euro(interestDue()) + "." };
+      return { title: "GNR", line: "Calor " + state.heat + "%. Presunto ou caderno." };
+    }
+
+    function renderCopy() {
+      const copy = document.getElementById("copy");
+      if (copy) copy.classList.toggle("more", moreBeats());
+      if (ui.fp && (ui.mode === "cab" || ui.mode === "location") && !atBar()) {
+        const names = { rua: "Aldeia", tasca: "O Pica-Pau", garagem: "Zequinha", junta: "Junta", feira: "Feira", matos: "Sr. Matos", gnr: "GNR" };
+        const caso = currentTale();
+        return "<h2>" + (caso ? caso.title : (names[ui.fp.loc] || "Aldeia")) + "</h2><p>" + storyLine() + "</p>";
+      }
+      if (ui.mode === "cab" && ui.cab) {
+        const person = personById(state.pending);
+        const said = ui.cab.flash || (person ? ui.cab.line : (storyLine() || (state.lineRun ? "Fim de linha. A rua ainda tem um caso." : "A linha abre.")));
+        return "<h2>" + (person ? person.name : "Turno") + "</h2><p>" + said + "</p>";
+      }
+      if (ui.mode === "title") return "<h2>A TASCA DO ZÉ</h2><p>Clica na porta.</p>";
+      if (ui.scene === "rua" && ui.mode === "location") return "<h2>Aldeia</h2><p>A aldeia.</p>";
+      if (ui.mode === "notebook") {
+        const alive = state.notebook.filter((s) => !s.used);
+        if (!alive.length) return "<h2>Caderno</h2><p>Vazio. Ouve um cliente até ao fim.</p>";
+        const secret = alive[(ui.note || 0) % alive.length];
+        return "<h2>" + secret.title + "</h2><p>" + bite(secret.text) + "</p>";
+      }
+      if (ui.mode === "act" && ui.act) return "<h2> </h2><p>" + ui.act.caption + "</p>";
+      if (ui.mode === "talk") {
+        const person = personById(state.pending);
+        if (!person) return "<h2>…</h2><p>A cadeira ficou vazia.</p>";
+        return "<h2>" + person.name + "</h2><p>" + quip(person.enter[state.day % person.enter.length]) + "</p>";
+      }
+      if (ui.mode === "result" || ui.mode === "over" || ui.mode === "confirm") {
+        const lines = ui.lines || [""];
+        const i = Math.min(ui.beat || 0, lines.length - 1);
+        return "<h2>" + (ui.title || "") + "</h2><p>" + bite(lines[i]) + (moreBeats() ? " ▾" : "") + "</p>";
+      }
+      const info = blurb();
+      return "<h2>" + info.title + "</h2><p>" + info.line + "</p>";
+    }
+
+    function renderMeters() {
+      const g = goal();
+      const rows = [
+        ["money", "Carteira", euro(state.money), (state.money / g.cost) * 100, "y"],
+        ["heat", "Calor ASAE", state.heat + "%", state.heat, "r"],
+        ["rep", "Reputação", state.reputation + "%", state.reputation, "g"],
+        ["pat", "Paciência", state.patience + "%", state.patience, "c"],
+        ["debt", "Dívida Matos", euro(state.debt), (state.debt / 2000) * 100, "m"]
+      ];
+      document.getElementById("meters").innerHTML = rows.map((r) =>
+        "<div class=\"meter " + r[4] + "\"><span class=\"k\">" + r[1] + "</span><span class=\"v\" id=\"m-" + r[0] + "\">" + r[2] + "</span><span class=\"track\"><span class=\"fill\" style=\"width:" +
+        clamp(r[3], 0, 100) + "%\"></span></span></div>"
+      ).join("");
+    }
+
+    function renderNav() {
+      const locked = ui.mode !== "location" && ui.mode !== "notebook" && ui.mode !== "cab";
+      document.getElementById("nav").innerHTML = PLACES.map((p) =>
+        "<button type=\"button\" data-loc=\"" + p.id + "\"" +
+        (locked ? " disabled" : "") +
+        (ui.mode === "location" && state.location === p.id ? " class=\"on\"" : "") +
+        ">" + p.nav + "</button>"
+      ).join("");
+    }
+
+    function render() {
+      const playing = ui.mode !== "title" && ui.mode !== "confirm";
+      document.getElementById("meters").hidden = !playing;
+      document.getElementById("nav").hidden = !playing || ui.mode === "cab" || ui.mode === "location";
+      document.getElementById("objective").hidden = !playing;
+      if (playing) {
+        const g = goal();
+        const ready = state.money >= g.cost;
+        const obj = document.getElementById("objective");
+        obj.className = ready ? "ready" : "";
+        const caso = currentTale();
+        obj.textContent = caso
+          ? caso.title + "  ·  " + (state.tale.step + 1) + "/" + caso.steps.length
+          : g.title + "  " + euro(state.money) + " / " + euro(g.cost) + (ready ? "  · FECHA" : "");
+        document.getElementById("day").textContent = "DIA " + String(state.day).padStart(2, "0");
+        renderMeters();
+        renderNav();
+      } else {
+        document.getElementById("day").textContent = "noite";
+      }
+
+      document.getElementById("copy").innerHTML = renderCopy();
+      const list = currentChoices();
+      ui.choicesLive = list;
+      const pictorial = ui.mode === "talk" || (ui.mode === "location" && ui.scene !== "rua");
+      document.getElementById("choices").innerHTML = pictorial ? "" : list.map((c, i) =>
+        "<button type=\"button\" data-i=\"" + i + "\"" + (c.disabled ? " disabled" : "") +
+        (c.hint ? " title=\"" + String(c.hint).replace(/"/g, "") + "\"" : "") + ">" +
+        (i + 1) + " " + c.label + "</button>"
+      ).join("");
+
+      const bookCount = playing ? state.notebook.filter((s) => !s.used).length : 0;
+      const canMove = ui.mode === "location" || ui.mode === "notebook" || ui.mode === "cab";
+      document.getElementById("foot").innerHTML =
+        (canMove ? "<button type=\"button\" id=\"btn-rua\">Rua</button> <button type=\"button\" id=\"btn-book\">Caderno " + bookCount + "</button> " : "") +
+        "<button type=\"button\" id=\"btn-sound\">" + (state.sound ? "Som" : "Mudo") + "</button>";
+
+      draw(ui.mode === "title" || ui.mode === "confirm" ? "title" : (ui.scene || state.location));
+      const crt = document.getElementById("crt");
+      if (ui.shake) {
+        crt.classList.remove("shake");
+        void crt.offsetWidth;
+        crt.classList.add("shake");
+        ui.shake = false;
+      }
+    }
+
+    function rect(g, x, y, w, h, col) {
+      g.fillStyle = col;
+      g.fillRect(x | 0, y | 0, w | 0, h | 0);
+    }
+
+    function spot(x, y, w, h, fn) {
+      ui.spots.push({ x: x, y: y, w: w, h: h, fn: fn });
+    }
+
+    function blob(g, x, y, w, h, r, col) {
+      g.fillStyle = col;
+      g.beginPath();
+      g.roundRect(x, y, w, h, r);
+      g.fill();
+    }
+
+    function fade(g, x, y, w, h, c0, c1) {
+      const grd = g.createLinearGradient(x, y, x, y + h);
+      grd.addColorStop(0, c0);
+      grd.addColorStop(1, c1);
+      g.fillStyle = grd;
+      g.fillRect(x, y, w, h);
+    }
+
+    function drawGuy(g, kind, x, y, s, mood, prop) {
+      s = s || 2;
+      mood = mood || "";
+      prop = prop || "";
+      const kit = {
+        ze: { hair: "#4a2a14", cloth: "#f7f1e8", pants: "#243e86", hat: "", extra: "apron", skin: "#f0b892" },
+        velho: { hair: "#f4f1ea", cloth: "#6d6a72", pants: "#2a2a44", hat: "", extra: "cane", skin: "#e3b89a" },
+        mulher: { hair: "#6a3820", cloth: "#c4478c", pants: "#8d2460", hat: "", extra: "bun", skin: "#f0b892" },
+        beto: { hair: "#2c1a10", cloth: "#3c63d6", pants: "#f2f2f2", hat: "shades", extra: "", skin: "#e8b08a" },
+        farda: { hair: "#2a2a2a", cloth: "#1f7a3a", pants: "#1a1a1a", hat: "cap", extra: "", skin: "#e8b08a" },
+        presidente: { hair: "#d5d2cc", cloth: "#2a4eb8", pants: "#7a3030", hat: "", extra: "tie", skin: "#efb89a" },
+        manel: { hair: "#4a2a14", cloth: "#e2c14a", pants: "#4e4a44", hat: "capy", extra: "", skin: "#e0a67e" },
+        padre: { hair: "#efeae2", cloth: "#1c1c1c", pants: "#1c1c1c", hat: "", extra: "collar", skin: "#efc0a4" },
+        emigrante: { hair: "#2c1a10", cloth: "#d24b40", pants: "#2a3d6e", hat: "", extra: "bag", skin: "#e8b08a" },
+        cripto: { hair: "#24160e", cloth: "#2a3a96", pants: "#1a3048", hat: "visor", extra: "", skin: "#e8b08a" },
+        zequinha: { hair: "#3a342e", cloth: "#d4843a", pants: "#2a8a3a", hat: "capy", extra: "", skin: "#e0a67e" },
+        agiota: { hair: "#161616", cloth: "#b42323", pants: "#161616", hat: "", extra: "chain", skin: "#e8b08a" }
+      }[kind] || { hair: "#4a2a14", cloth: "#d8d0c4", pants: "#243e86", hat: "", extra: "", skin: "#f0b892" };
+      const skin = mood === "sick" ? "#b7d98a" : (mood === "angry" ? "#e8896a" : kit.skin);
+      let ox = 0;
+      let oy = mood === "fly" ? 0 : Math.sin((tick + x) / 10) * 0.35;
+      if (mood === "fly" && ui.act) {
+        ox = ui.act.t * 0.85;
+        oy = -Math.abs(Math.sin(ui.act.t / 2.2)) * 2.4;
+      }
+      g.save();
+      g.translate(x + ox, y + oy);
+      g.scale(s, s);
+      if (mood === "fly") {
+        g.translate(6, 14);
+        g.rotate(-0.35);
+        g.translate(-6, -14);
+      }
+      g.fillStyle = "rgba(20,10,4,0.28)";
+      g.beginPath();
+      g.ellipse(6.2, 27.4, 5.4, 1.15, 0, 0, Math.PI * 2);
+      g.fill();
+      blob(g, 2.3, 19.2, 3.2, 6.6, 1.2, kit.pants);
+      blob(g, 6.8, 19.2, 3.2, 6.6, 1.2, kit.pants);
+      blob(g, 1.9, 24.8, 4, 2.2, 1, "#2a241e");
+      blob(g, 6.4, 24.8, 4, 2.2, 1, "#2a241e");
+      const wide = kind === "presidente" || kind === "agiota";
+      const body = g.createLinearGradient(1, 11, 12, 22);
+      body.addColorStop(0, "#ffffff");
+      body.addColorStop(0.18, kit.cloth);
+      body.addColorStop(1, kit.cloth);
+      g.fillStyle = body;
+      g.beginPath();
+      g.roundRect(wide ? -0.4 : 1.3, 11.2, wide ? 13.2 : 9.6, 8.6, 2.4);
+      g.fill();
+      if (kit.extra === "apron") {
+        blob(g, 3.1, 13.4, 5.8, 6.2, 1.2, "#fffdf8");
+        g.fillStyle = "#c4473a";
+        g.beginPath();
+        g.arc(6, 14.2, 0.7, 0, Math.PI * 2);
+        g.fill();
+      }
+      if (kit.extra === "tie") blob(g, 5.5, 11.4, 1.5, 4.8, 0.6, "#e23b3b");
+      if (kit.extra === "collar") blob(g, 4.2, 11.2, 3.6, 1.5, 0.4, "#fff");
+      if (kit.extra === "chain") {
+        g.strokeStyle = "#f0c84a";
+        g.lineWidth = 0.45;
+        g.beginPath();
+        g.arc(6.1, 15.2, 2.1, 0.2, Math.PI - 0.2);
+        g.stroke();
+      }
+      if (kind === "mulher") blob(g, 2.2, 17.2, 7.6, 4.2, 2, "#c4478c");
+      g.fillStyle = skin;
+      if (prop === "glass") {
+        blob(g, -1.6, 12.4, 2.4, 5.2, 1, skin);
+        blob(g, 10.2, 11.2, 2.3, 3.4, 1, skin);
+        g.fillStyle = "rgba(210, 236, 246, 0.92)";
+        g.beginPath();
+        g.roundRect(12.1, 7.2, 2.3, 5.2, 0.6);
+        g.fill();
+        g.fillStyle = "rgba(255,255,255,0.8)";
+        g.fillRect(12.5, 7.6, 0.45, 3.2);
+      } else if (prop === "bottle") {
+        blob(g, -1.6, 12.4, 2.4, 5.2, 1, skin);
+        blob(g, 10.4, 10.2, 2.2, 3.6, 1, skin);
+        blob(g, 12.2, 5.2, 2.5, 7.2, 0.8, "#2f9e44");
+        blob(g, 12.8, 3.6, 1.3, 2, 0.4, "#1d6b30");
+      } else if (prop === "book") {
+        blob(g, -1.6, 12.4, 2.4, 5.2, 1, skin);
+        blob(g, 9.4, 12.6, 5.2, 4.2, 0.5, "#f4e2a8");
+        g.fillStyle = "#8a6230";
+        g.fillRect(11.6, 12.6, 0.45, 4.2);
+      } else if (mood === "whisper") {
+        blob(g, -1.6, 12.4, 2.4, 5.2, 1, skin);
+        blob(g, 8.2, 8.2, 2.6, 3.2, 1.2, skin);
+      } else if (mood === "fly") {
+        blob(g, -2.2, 11, 2.6, 4.2, 1, skin);
+        blob(g, 11.4, 11, 2.6, 4.2, 1, skin);
+      } else {
+        blob(g, -1.5, 12.2, 2.5, 5.4, 1.1, skin);
+        blob(g, 11, 12.2, 2.5, 5.4, 1.1, skin);
+      }
+      g.fillStyle = kit.hair;
+      g.beginPath();
+      g.arc(6.1, 6.6, 5.15, Math.PI * 1.05, Math.PI * 1.95);
+      g.fill();
+      if (kit.extra === "bun") {
+        g.beginPath();
+        g.arc(10.6, 4.2, 2.1, 0, Math.PI * 2);
+        g.fill();
+      }
+      const face = g.createRadialGradient(4.4, 5.2, 0.6, 6.1, 7.4, 5.4);
+      face.addColorStop(0, mood === "sick" ? "#d4eeb0" : "#ffe4d0");
+      face.addColorStop(1, skin);
+      g.fillStyle = face;
+      g.beginPath();
+      g.arc(6.1, 8.2, 4.7, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "rgba(220, 120, 110, 0.28)";
+      g.beginPath();
+      g.arc(3.6, 9.4, 0.8, 0, Math.PI * 2);
+      g.arc(8.6, 9.4, 0.8, 0, Math.PI * 2);
+      g.fill();
+      if (kind === "ze") {
+        g.fillStyle = "#4a2a14";
+        g.beginPath();
+        g.ellipse(6.1, 9.15, 2.3, 0.55, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+      const blink = tick % 140 < 8;
+      if (kit.hat === "shades") {
+        blob(g, 2.6, 7.1, 7, 1.7, 0.7, "#1a1a1a");
+      } else if (kit.hat === "visor") {
+        blob(g, 2.5, 6.9, 7.2, 1.8, 0.7, "rgba(90, 230, 230, 0.85)");
+      } else if (!blink) {
+        g.fillStyle = "#fffdf8";
+        g.beginPath();
+        g.ellipse(4.3, 8, 0.85, 1, 0, 0, Math.PI * 2);
+        g.ellipse(7.9, 8, 0.85, 1, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "#2a2118";
+        g.beginPath();
+        g.arc(4.45, 8.1, 0.42, 0, Math.PI * 2);
+        g.arc(8.05, 8.1, 0.42, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "#fff";
+        g.fillRect(4.55, 7.85, 0.22, 0.22);
+        g.fillRect(8.15, 7.85, 0.22, 0.22);
+      } else {
+        g.strokeStyle = "#5a4034";
+        g.lineWidth = 0.28;
+        g.beginPath();
+        g.moveTo(3.5, 8);
+        g.quadraticCurveTo(4.3, 8.5, 5.2, 8);
+        g.moveTo(7.1, 8);
+        g.quadraticCurveTo(7.9, 8.5, 8.8, 8);
+        g.stroke();
+      }
+      g.strokeStyle = mood === "angry" ? "#6a3030" : "#a85058";
+      g.lineWidth = 0.38;
+      g.lineCap = "round";
+      g.beginPath();
+      if (mood === "angry") {
+        g.moveTo(3.2, 6.7);
+        g.lineTo(5.2, 7.2);
+        g.moveTo(9, 6.7);
+        g.lineTo(7, 7.2);
+        g.moveTo(4.4, 10.5);
+        g.quadraticCurveTo(6.1, 9.7, 7.8, 10.5);
+      } else if (mood === "happy" || mood === "drink") {
+        g.moveTo(4.2, 10.1);
+        g.quadraticCurveTo(6.1, 11.3, 8, 10.1);
+      } else if (mood === "talk" && Math.floor(tick / 8) % 2 === 0) {
+        g.stroke();
+        g.fillStyle = "#6a3038";
+        g.beginPath();
+        g.ellipse(6.1, 10.4, 1.1, 0.7, 0, 0, Math.PI * 2);
+        g.fill();
+      } else if (mood === "sick") {
+        g.moveTo(4.6, 10.6);
+        g.quadraticCurveTo(6.1, 9.8, 7.6, 10.5);
+      } else {
+        g.moveTo(5, 10.3);
+        g.quadraticCurveTo(6.1, 10.7, 7.2, 10.3);
+      }
+      if (!(mood === "talk" && Math.floor(tick / 8) % 2 === 0)) g.stroke();
+      if (kit.hat === "cap") {
+        blob(g, 1.6, 2.2, 9.2, 2.3, 0.8, "#145c28");
+        blob(g, 1.4, 3.8, 9.8, 1.3, 0.4, "#145c28");
+      }
+      if (kit.hat === "capy") {
+        blob(g, 1.6, 2.2, 9.2, 2.3, 0.8, "#e2c14a");
+        blob(g, 1.4, 3.8, 9.8, 1.3, 0.4, "#c49a28");
+      }
+      if (kit.extra === "cane") {
+        g.strokeStyle = "#d8d2c6";
+        g.lineWidth = 0.45;
+        g.beginPath();
+        g.moveTo(13.2, 14);
+        g.lineTo(13.2, 26.5);
+        g.stroke();
+      }
+      if (kit.extra === "bag") blob(g, -3.4, 14.2, 3.2, 4.6, 0.8, "#6a4420");
+      g.restore();
+    }
+    function guyLook(who) {
+      if (ui.mode !== "act" || !ui.act) {
+        return who === "ze" ? { mood: "", prop: "" } : { mood: "talk", prop: "" };
+      }
+      const k = ui.act.kind;
+      const t = ui.act.t;
+      if (k === "ouvir") return who === "ze" ? { mood: "whisper", prop: "book" } : { mood: "talk", prop: "" };
+      if (k === "palha") {
+        if (ui.act.dry) return who === "ze" ? { mood: "", prop: "" } : { mood: "angry", prop: "" };
+        if (who === "ze") return { mood: "", prop: t < 26 ? "glass" : "" };
+        return { mood: "happy", prop: t >= 16 ? "glass" : "" };
+      }
+      if (k === "marosca") {
+        if (who === "ze") return { mood: "", prop: "bottle" };
+        if (ui.act.hot) return { mood: "angry", prop: "" };
+        return { mood: t > 18 ? "sick" : "drink", prop: "" };
+      }
+      if (k === "rua") return who === "ze" ? { mood: "angry", prop: "" } : { mood: "fly", prop: "" };
+      return who === "ze" ? { mood: "", prop: "book" } : { mood: "angry", prop: "" };
+    }
+
+    function paintTalkActs(g) {
+      if (ui.mode !== "talk") return;
+      const person = personById(state.pending);
+      if (!person) return;
+      const illegal = peekIllegal();
+      const acts = [
+        { word: "OUVIR", col: "#ffff55", mark: "#f3e2a4", fn: () => doListen(person) },
+        { word: "COPO", col: "#55ffff", mark: "#d7f7ff", fn: () => doPalha(person) },
+        { word: "GOLPE", col: illegal ? "#55ff55" : "#555555", mark: illegal ? "#2f9e44" : "#444444", fn: () => doMarosca(person), off: !illegal },
+        { word: "FORA", col: "#ff5555", mark: "#ff5555", fn: () => doKick(person) }
+      ];
+      const secrets = secretsForPerson(person);
+      if (secrets.length) acts.push({ word: "LIVRO", col: "#ff55ff", mark: "#f3e2a4", fn: () => doBlackmail(person, secrets[0]) });
+      const gap = 4;
+      const w = Math.floor((304 - gap * (acts.length - 1)) / acts.length);
+      acts.forEach((a, i) => {
+        const x = 8 + i * (w + gap);
+        const y = 150;
+        const hot = !a.off && ui.mx >= x && ui.mx <= x + w && ui.my >= y && ui.my <= y + 26;
+        blob(g, x, y, w, 26, 6, a.off ? "#3a322c" : (hot ? "#fff6e4" : "#f4e7cf"));
+        g.fillStyle = a.col;
+        g.fillRect(x + 4, y + 3, w - 8, 3);
+        blob(g, x + 6, y + 9, 8, 12, 2, a.mark);
+        label(g, a.word, x + 16, y + 20, a.off ? "#8a8078" : "#2a2118");
+      });
+    }
+
+    function label(g, text, x, y, col) {
+      g.font = "700 11px Georgia, 'Times New Roman', serif";
+      g.fillStyle = "rgba(0,0,0,0.35)";
+      g.fillText(text, x + 0.6, y + 0.6);
+      g.fillStyle = col || "#f6e2b0";
+      g.fillText(text, x, y);
+    }
+
+    function tiles(g, y0, h, a, b) {
+      for (let y = y0; y < y0 + h; y += 8) {
+        for (let x = 0; x < 320; x += 8) {
+          rect(g, x, y, 8, 8, ((x + y) / 8) % 2 === 0 ? a : b);
+        }
+      }
+    }
+
+    function drawTitle(g) {
+      const sky = g.createLinearGradient(0, 0, 0, 100);
+      sky.addColorStop(0, "#1b2438");
+      sky.addColorStop(1, "#6a4634");
+      g.fillStyle = sky;
+      g.fillRect(0, 0, 320, 100);
+      const moon = g.createRadialGradient(250, 28, 2, 250, 28, 18);
+      moon.addColorStop(0, "#fff6d8");
+      moon.addColorStop(1, "rgba(255,246,216,0)");
+      g.fillStyle = moon;
+      g.beginPath();
+      g.arc(250, 28, 18, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#fff1c9";
+      g.beginPath();
+      g.arc(250, 28, 7, 0, Math.PI * 2);
+      g.fill();
+      const ground = g.createLinearGradient(0, 96, 0, 180);
+      ground.addColorStop(0, "#6b4a32");
+      ground.addColorStop(1, "#2a1a12");
+      g.fillStyle = ground;
+      g.fillRect(0, 96, 320, 84);
+      g.fillStyle = "#5c3a28";
+      g.fillRect(24, 48, 272, 92);
+      g.fillStyle = "#3a2418";
+      g.fillRect(24, 48, 272, 10);
+      g.fillStyle = "#f3d7a1";
+      g.font = "700 16px Georgia, serif";
+      g.fillText("A TASCA DO ZÉ", 78, 78);
+      if (Math.floor(tick / 20) % 2 === 0) {
+        g.fillStyle = "#e23d4a";
+        g.fillRect(210, 64, 48, 4);
+      }
+      drawGuy(g, "ze", 138, 86, 2.4);
+      function doorCard(x, y, title, hot) {
+        g.fillStyle = hot ? "#f6e7c8" : "#8a5a34";
+        g.beginPath();
+        g.roundRect(x, y, 78, 36, 6);
+        g.fill();
+        g.fillStyle = hot ? "#2a2118" : "#f6efe2";
+        g.font = "700 12px Georgia, serif";
+        g.fillText(title, x + 16, y + 22);
+      }
+      if (ui.mode === "title") {
+        const overNovo = ui.mx >= 40 && ui.mx <= 118 && ui.my >= 138 && ui.my <= 174;
+        const overSegue = ui.mx >= 200 && ui.mx <= 278 && ui.my >= 138 && ui.my <= 174;
+        doorCard(40, 138, "NOVO", overNovo);
+        spot(40, 138, 78, 36, () => (peekSave() ? confirmNew() : startNew()));
+        if (peekSave()) {
+          doorCard(200, 138, "SEGUE", overSegue);
+          spot(200, 138, 78, 36, continueGame);
+        }
+      }
+    }
+
+    function drawRua(g) {
+      const sky = g.createLinearGradient(0, 0, 0, 92);
+      sky.addColorStop(0, "#24324a");
+      sky.addColorStop(0.7, "#c47a58");
+      sky.addColorStop(1, "#e7b07a");
+      g.fillStyle = sky;
+      g.fillRect(0, 0, 320, 96);
+      g.fillStyle = "#fff6e4";
+      g.beginPath();
+      g.arc(40, 22, 8, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "rgba(255,246,228,0.35)";
+      g.beginPath();
+      g.ellipse(70 + (tick * 0.15) % 200, 18, 18, 6, 0, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#5d6a48";
+      g.beginPath();
+      g.moveTo(0, 96);
+      g.quadraticCurveTo(80, 78, 160, 92);
+      g.quadraticCurveTo(240, 70, 320, 88);
+      g.lineTo(320, 120);
+      g.lineTo(0, 120);
+      g.fill();
+      const road = g.createLinearGradient(0, 118, 0, 180);
+      road.addColorStop(0, "#8a7a68");
+      road.addColorStop(1, "#4a4038");
+      g.fillStyle = road;
+      g.fillRect(0, 124, 320, 56);
+      g.strokeStyle = "rgba(255, 230, 170, 0.35)";
+      g.setLineDash([8, 10]);
+      g.beginPath();
+      g.moveTo(0, 150);
+      g.lineTo(320, 150);
+      g.stroke();
+      g.setLineDash([]);
+      const houses = [
+        ["tasca", "Tasca", 8, 46, "#8d3a32", "#5c241c"],
+        ["garagem", "Garagem", 112, 50, "#6a6e74", "#3e444c"],
+        ["junta", "Junta", 216, 42, "#d7d2c6", "#8a8478"],
+        ["feira", "Feira", 8, 108, "#e2b15a", "#a87830"],
+        ["matos", "Matos", 112, 112, "#6a3038", "#3a181c"],
+        ["gnr", "GNR", 216, 108, "#2f5c3a", "#1c3a24"]
+      ];
+      houses.forEach((h) => {
+        const x = h[2];
+        const y = h[3];
+        g.fillStyle = "rgba(0,0,0,0.18)";
+        g.beginPath();
+        g.ellipse(x + 48, y + 52, 40, 5, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = h[5];
+        g.beginPath();
+        g.moveTo(x + 6, y + 16);
+        g.lineTo(x + 48, y);
+        g.lineTo(x + 90, y + 16);
+        g.closePath();
+        g.fill();
+        g.fillStyle = h[4];
+        g.beginPath();
+        g.roundRect(x + 10, y + 14, 76, 36, 2);
+        g.fill();
+        g.fillStyle = "rgba(255, 214, 140, 0.85)";
+        g.fillRect(x + 18, y + 20, 12, 10);
+        g.fillRect(x + 64, y + 20, 12, 10);
+        g.fillStyle = "#2a1c14";
+        g.beginPath();
+        g.roundRect(x + 40, y + 26, 14, 24, 1);
+        g.fill();
+        if (state.location === h[0]) {
+          g.strokeStyle = "#f3d7a1";
+          g.lineWidth = 2;
+          g.strokeRect(x + 8, y + 12, 80, 40);
+        }
+        const low = y > 80;
+        g.fillStyle = !low && h[0] === "junta" ? "#2a2118" : "#f6efe2";
+        g.font = "700 9px Georgia, serif";
+        g.fillText(h[1], x + 24, low ? y - 1 : y + 22);
+        if (ui.mode === "location") {
+          spot(x, y, 96, 54, () => walkTo(x + 28, 124, () => arrive(h[0], false)));
+        }
+      });
+      const hro = ensureHero();
+      drawGuy(g, "ze", hro.x, hro.y - 8, 2.2);
+    }
+
+    function paintCounter(g) {
+      if (ui.mode !== "location" && ui.mode !== "cab") return;
+      locationChoices().forEach((c, i) => {
+        const x = 8 + (i % 4) * 78;
+        const y = 116 + Math.floor(i / 4) * 32;
+        const hot = !c.disabled && ui.mx != null && ui.mx >= x && ui.mx <= x + 74 && ui.my >= y && ui.my <= y + 28;
+        g.fillStyle = c.disabled ? "#3a322c" : (hot ? "#fff6e4" : "#f4e7cf");
+        g.beginPath();
+        g.roundRect(x, y, 74, 28, 7);
+        g.fill();
+        g.fillStyle = c.disabled ? "#8a8078" : "#2a2118";
+        const raw = String(c.label);
+        const price = (raw.match(/\(([^)]+)\)/) || [])[1];
+        const name = raw.replace(/\s*\([^)]*\)/, "");
+        g.font = "700 8px Georgia, 'Times New Roman', serif";
+        g.fillText(name.length > 18 ? name.slice(0, 17) + "." : name, x + 6, y + 12);
+        if (price) {
+          g.font = "700 7px Georgia, 'Times New Roman', serif";
+          g.fillText(price, x + 6, y + 22);
+        }
+        if (!c.disabled) spot(x, y, 74, 28, () => choose(c));
+      });
+    }
+
+    function paintRoomShell(g, top, mid, floor) {
+      const wall = g.createLinearGradient(0, 0, 0, 116);
+      wall.addColorStop(0, top);
+      wall.addColorStop(1, mid);
+      g.fillStyle = wall;
+      g.fillRect(0, 0, 320, 116);
+      const ground = g.createLinearGradient(0, 112, 0, 180);
+      ground.addColorStop(0, floor);
+      ground.addColorStop(1, "#1a100c");
+      g.fillStyle = ground;
+      g.fillRect(0, 112, 320, 68);
+      const lamp = g.createRadialGradient(180, 36, 4, 180, 48, 90);
+      lamp.addColorStop(0, "rgba(255, 220, 160, 0.38)");
+      lamp.addColorStop(1, "rgba(255, 220, 160, 0)");
+      g.fillStyle = lamp;
+      g.fillRect(20, 0, 280, 116);
+    }
+
+    function drawRoom(g, id) {
+      if (id === "tasca") {
+        paintRoomShell(g, "#7a5340", "#3c261c", "#6a442c");
+        g.fillStyle = "#5c3a28";
+        g.fillRect(12, 16, 100, 22);
+        g.fillStyle = "#f3d7a1";
+        g.font = "700 11px Georgia, serif";
+        g.fillText("PICA-PAU", 22, 31);
+        g.fillStyle = "#e7d3b0";
+        g.fillRect(230, 18, 70, 40);
+        g.strokeStyle = state.montraPartida ? "#f4f4f4" : "#8a6230";
+        g.lineWidth = 2;
+        g.strokeRect(230, 18, 70, 40);
+        if (state.montraPartida) {
+          g.beginPath();
+          g.moveTo(230, 18);
+          g.lineTo(300, 58);
+          g.moveTo(300, 18);
+          g.lineTo(230, 58);
+          g.stroke();
+        }
+        const bar = g.createLinearGradient(8, 48, 8, 90);
+        bar.addColorStop(0, "#d7b48a");
+        bar.addColorStop(1, "#6a4128");
+        g.fillStyle = bar;
+        g.beginPath();
+        g.roundRect(8, 50, 150, 36, 4);
+        g.fill();
+        g.fillStyle = "#2a1c14";
+        g.beginPath();
+        g.roundRect(6, 118, 34, 56, 3);
+        g.fill();
+        g.fillStyle = "#6a4128";
+        g.beginPath();
+        g.roundRect(10, 124, 26, 44, 2);
+        g.fill();
+        g.fillStyle = "#e6c56a";
+        g.beginPath();
+        g.arc(30, 146, 2.2, 0, Math.PI * 2);
+        g.fill();
+        if (ui.mode === "location" || ui.mode === "talk") {
+          spot(6, 118, 34, 56, () => walkTo(10, 108, () => {
+            if (ui.mode === "talk" && state.pending) doKick(personById(state.pending));
+            else endDay();
+          }));
+        }
+        if (ui.mode !== "talk" && ui.mode !== "act") {
+          rect(g, 286, 124, 26, 40, "#aa5500");
+          rect(g, 286, 132, 26, 4, "#331100");
+          rect(g, 286, 146, 26, 4, "#331100");
+        }
+        const zeLook = guyLook("ze");
+        const hro = ensureHero();
+        drawGuy(g, "ze", hro.x, hro.y, 2, zeLook.mood, zeLook.prop);
+        const waiting = state.pending || (state.queue && state.queue.length);
+        if (waiting && ui.mode !== "act") {
+          const glow = Math.floor(tick / 12) % 2 === 0;
+          rect(g, 118, 56, 12, 16, glow ? "#d7f7ff" : "#9ec8d4");
+          g.font = "700 8px Georgia, serif";
+          g.fillStyle = "#1a120e";
+          g.fillText("COPO", 112, 52);
+          spot(110, 48, 28, 28, () => walkTo(88, 104, () => {
+            const p = grabPerson();
+            if (!p) { popup("NINGUÉM", "#ffffff"); return; }
+            ui.visitor = p.sprite;
+            doPalha(p);
+          }));
+          if (peekIllegal()) {
+            rect(g, 146, 48, 10, 22, glow ? "#47d46a" : "#1d6b30");
+            g.fillStyle = "#f6efe2";
+            g.fillText("GOLPE", 140, 46);
+            spot(140, 44, 24, 30, () => walkTo(112, 104, () => {
+              const p = grabPerson();
+              if (!p) return;
+              ui.visitor = p.sprite;
+              doMarosca(p);
+            }));
+          }
+          if (ui.mode === "talk") {
+            const live = personById(state.pending);
+            const secrets = live ? secretsForPerson(live) : [];
+            if (secrets.length) {
+              rect(g, 172, 56, 16, 12, "#f3e2a4");
+              spot(168, 52, 24, 20, () => walkTo(136, 104, () => doBlackmail(live, secrets[0])));
+            }
+          }
+        }
+        if ((ui.mode === "talk" || ui.mode === "act") && ui.visitor) {
+          const guest = guyLook("guest");
+          const px = 196;
+          const py = 100;
+          drawGuy(g, ui.visitor, px, py, 2, guest.mood, guest.prop);
+          if (ui.mode === "talk") {
+            g.fillStyle = "#fffdf8";
+            g.beginPath();
+            g.ellipse(px + 22, 92, 10, 6, 0, 0, Math.PI * 2);
+            g.fill();
+            g.fillStyle = "#2a2118";
+            g.font = "700 10px Georgia, serif";
+            g.fillText(".".repeat(1 + Math.floor(tick / 10) % 3), px + 16, 95);
+            spot(px - 4, py - 4, 40, 58, () => walkTo(150, 104, () => {
+              const p = personById(state.pending);
+              if (p) doListen(p);
+            }));
+          }
+          if (ui.mode === "act" && ui.act && ui.act.kind === "marosca" && !ui.act.hot) {
+            for (let i = 0; i < 3; i++) {
+              const puff = (ui.act.t + i * 8) % 24;
+              g.fillStyle = "#8dce62";
+              g.beginPath();
+              g.arc(px + 16 + i * 7, 88 - puff, 2.2, 0, Math.PI * 2);
+              g.fill();
+            }
+          }
+        } else {
+          const q = [];
+          if (state.pending) q.push(state.pending);
+          (state.queue || []).forEach((pid) => { if (q.length < 4) q.push(pid); });
+          q.forEach((pid, i) => {
+            const person = personById(pid);
+            const sc = i === 0 ? 2 : 1;
+            const px = i === 0 ? 196 : 236 + (i - 1) * 26;
+            const py = i === 0 ? 100 : 112;
+            drawGuy(g, person ? person.sprite : "velho", px, py, sc);
+            if (i === 0 && ui.mode === "location") {
+              if (Math.floor(tick / 12) % 2 === 0) {
+                g.strokeStyle = "#e6b84a";
+                g.lineWidth = 1.5;
+                g.strokeRect(px - 3, py - 3, 34, 58);
+              }
+              spot(px - 4, py - 4, 36, 60, () => walkTo(150, 104, openCustomer));
+            }
+          });
+        }
+        if (state.slots) {
+          rect(g, 248, 132, 22, 28, "#000000");
+          rect(g, 251, 136, 16, 10, Math.floor(tick / 5) % 2 ? "#ff5555" : "#ffff55");
+          rect(g, 251, 148, 16, 8, "#00aa00");
+        }
+        return;
+      }
+      if (id === "garagem") {
+        paintRoomShell(g, "#4a4e55", "#23262b", "#3a3a3a");
+        g.fillStyle = "#8d939c";
+        g.beginPath();
+        g.roundRect(176, 28, 120, 52, 4);
+        g.fill();
+        g.fillStyle = "#d7e7ef";
+        g.fillRect(188, 38, 40, 22);
+        g.fillRect(240, 38, 40, 22);
+        g.fillStyle = "#c47a3a";
+        g.beginPath();
+        g.roundRect(18, 48, 28, 36, 2);
+        g.fill();
+        g.fillStyle = "#8d3a32";
+        g.beginPath();
+        g.roundRect(52, 56, 24, 28, 2);
+        g.fill();
+        label(g, "ZEQUINHA", 16, 28, "#f6efe2");
+        drawGuy(g, "zequinha", 130, 36, 2.2);
+        drawGuy(g, "ze", 36, 44, 2);
+      } else if (id === "junta") {
+        paintRoomShell(g, "#e4ddd0", "#b7b0a4", "#c4b8a4");
+        g.fillStyle = "#2f6a3a";
+        g.fillRect(16, 16, 18, 12);
+        g.fillStyle = "#8d3030";
+        g.fillRect(36, 16, 22, 12);
+        g.fillStyle = "#8a5a32";
+        g.beginPath();
+        g.roundRect(168, 62, 110, 24, 3);
+        g.fill();
+        label(g, "JUNTA", 16, 52, "#2a2118");
+        drawGuy(g, "presidente", 200, 24, 2.2);
+        drawGuy(g, "ze", 40, 42, 2);
+      } else if (id === "feira") {
+        paintRoomShell(g, "#e7c48a", "#c48a4a", "#a67c4a");
+        const sky = g.createLinearGradient(0, 0, 0, 40);
+        sky.addColorStop(0, "#8ec4e0");
+        sky.addColorStop(1, "#f0d7a8");
+        g.fillStyle = sky;
+        g.fillRect(0, 0, 320, 34);
+        for (let i = 0; i < 8; i++) {
+          const x = ((i * 42) - (tick % 42));
+          g.fillStyle = i % 2 ? "#b23a3a" : "#e6c56a";
+          g.beginPath();
+          g.moveTo(x, 30);
+          g.lineTo(x + 16, 14);
+          g.lineTo(x + 32, 30);
+          g.fill();
+        }
+        g.fillStyle = "#8a5a32";
+        g.beginPath();
+        g.roundRect(168, 40, 112, 30, 3);
+        g.fill();
+        label(g, "FEIRA", 16, 28, "#6a2418");
+        drawGuy(g, "mulher", 200, 28, 2.2);
+        drawGuy(g, "ze", 36, 40, 2);
+      } else if (id === "matos") {
+        paintRoomShell(g, "#3a2428", "#140c10", "#2a1818");
+        g.fillStyle = "#f3e2a4";
+        g.beginPath();
+        g.arc(268, 22, 8, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "#4a2820";
+        g.beginPath();
+        g.roundRect(150, 64, 120, 26, 3);
+        g.fill();
+        label(g, "MATOS", 16, 32, "#e7b0a8");
+        drawGuy(g, "agiota", 190, 26, 2.2);
+        drawGuy(g, "ze", 32, 44, 2);
+      } else {
+        paintRoomShell(g, "#3e624c", "#1c3024", "#3a4038");
+        g.fillStyle = "#2a2a2a";
+        g.beginPath();
+        g.roundRect(168, 58, 120, 28, 3);
+        g.fill();
+        g.fillStyle = "#e6c56a";
+        g.fillRect(16, 16, 54, 16);
+        label(g, "GNR", 26, 28, "#1a1a1a");
+        drawGuy(g, "farda", 200, 24, 2.2);
+        drawGuy(g, "ze", 32, 44, 2);
+      }
+      paintCounter(g);
+    }
+
+    function drawFloats(g) {
+      g.font = "bold 12px monospace";
+      for (let i = floats.length - 1; i >= 0; i--) {
+        const f = floats[i];
+        f.t += 1;
+        f.y -= 0.5;
+        g.globalAlpha = Math.max(0, 1 - f.t / 60);
+        g.fillStyle = "#000";
+        g.fillText(f.text, f.x + 1, f.y + 1);
+        g.fillStyle = f.color;
+        g.fillText(f.text, f.x, f.y);
+        g.globalAlpha = 1;
+        if (f.t > 60) floats.splice(i, 1);
+      }
+    }
+
+    function drawFlash(g) {
+      if (ui.mode !== "result" && ui.mode !== "over") return;
+      const line = String((ui.lines || [])[ui.beat || 0] || "");
+      if (/Rusga|ASAE|hospital|tecto|partiram|Indemniza/i.test(line)) {
+        rect(g, 0, 0, 320, 180, "rgba(255,30,0,0.25)");
+      }
+    }
+
+    function drawHot(g) {
+      if (ui.mx == null) return;
+      const hit = (ui.spots || []).find((s) => ui.mx >= s.x && ui.mx <= s.x + s.w && ui.my >= s.y && ui.my <= s.y + s.h);
+      if (!hit) return;
+      g.strokeStyle = "#ffff55";
+      g.lineWidth = 2;
+      g.strokeRect(hit.x + 1, hit.y + 1, hit.w - 2, hit.h - 2);
+    }
+
+    function streetGrid() {
+      const W = 34;
+      const H = 8;
+      const rows = [];
+      for (let y = 0; y < H; y++) {
+        let s = "";
+        for (let x = 0; x < W; x++) {
+          const border = x === 0 || y === 0 || x === W - 1 || y === H - 1;
+          const wallRow = y === 1 || y === 6;
+          const door = wallRow && (x === 4 || x === 14 || x === 24);
+          s += door ? "D" : (border || wallRow) ? "#" : ".";
+        }
+        rows.push(s);
+      }
+      return rows;
+    }
+
+    function shopMap(kind, wall, dark, floor, floorAlt) {
+      const folk = {
+        garagem: { who: "zequinha", name: "Zequinha", mood: "talk", hand: "" },
+        junta: { who: "presidente", name: "Presidente", mood: "talk", hand: "book" },
+        feira: { who: "mulher", name: "Feirante", mood: "happy", hand: "" },
+        matos: { who: "agiota", name: "Sr. Matos", mood: "angry", hand: "" },
+        gnr: { who: "farda", name: "Cabo", mood: "", hand: "" }
+      }[kind];
+      const props = {
+        garagem: [{ x: 1.6, y: 2.8, prop: "barril" }, { x: 6.2, y: 3.3, prop: "caixa" }],
+        junta: [{ x: 1.5, y: 2.3, prop: "quadro" }],
+        feira: [{ x: 1.55, y: 3.1, prop: "caixa" }, { x: 6.3, y: 2.7, prop: "caixa" }, { x: 2.2, y: 4.3, prop: "barril" }],
+        matos: [{ x: 6.15, y: 2.5, prop: "cofre" }],
+        gnr: [{ x: 1.55, y: 2.4, prop: "quadro" }]
+      }[kind] || [];
+      return {
+        wall: wall,
+        wallDark: dark,
+        ceil: "#2a2118",
+        floor: floor,
+        floorAlt: floorAlt,
+        spawn: { x: 3.5, y: 3.6, a: -Math.PI / 2 },
+        entries: { in: { x: 3.5, y: 3.6, a: -Math.PI / 2 } },
+        grid: [
+          "########",
+          "#......#",
+          "#......#",
+          "#......#",
+          "#......#",
+          "###D####"
+        ],
+        doors: [{ x: 3, y: 5, to: "rua", entry: kind }],
+        sprites: [{ x: 3.5, y: 1.7, who: folk.who, name: folk.name, mood: folk.mood, hand: folk.hand }].concat(props)
+      };
+    }
+
+    const WORLD = {
+      tasca: {
+        wall: "#7a5340",
+        wallDark: "#4e3428",
+        ceil: "#3a261c",
+        floor: "#8a5a34",
+        floorAlt: "#5c3a22",
+        spawn: { x: 3.5, y: 6.2, a: -Math.PI / 2 },
+        entries: {
+          bar: { x: 3.5, y: 6.2, a: -Math.PI / 2 },
+          door: { x: 3.5, y: 7.2, a: -Math.PI / 2 }
+        },
+        grid: [
+          "########",
+          "#......#",
+          "#......#",
+          "#......#",
+          "#......#",
+          "#......#",
+          "#......#",
+          "#......#",
+          "###D####"
+        ],
+        doors: [{ x: 3, y: 8, to: "rua", entry: "tasca" }],
+        focus: { x: 3.5, y: 1.55 }
+      },
+      rua: {
+        out: true,
+        wall: "#8d6b52",
+        wallDark: "#5c4638",
+        ceil: "#24324a",
+        floor: "#6a5a48",
+        floorAlt: "#3e342c",
+        sprites: [
+          { x: 6.2, y: 2.55, who: "mulher", name: "Albertina", mood: "talk" },
+          { x: 8.4, y: 4.6, who: "velho", name: "António", hand: "bottle", mood: "drink" },
+          { x: 11.2, y: 2.55, who: "emigrante", name: "Zeca", mood: "talk" },
+          { x: 16.6, y: 2.5, who: "zequinha", name: "Zequinha", mood: "talk" },
+          { x: 12.4, y: 4.6, who: "agiota", name: "Matos", mood: "angry" },
+          { x: 18.8, y: 4.55, who: "manel", name: "Manel", mood: "happy" },
+          { x: 26.6, y: 4.55, who: "farda", name: "Cabo" },
+          { x: 2.4, y: 4.7, who: "padre", name: "Padre" },
+          { x: 9.2, y: 3.15, prop: "lampiao" },
+          { x: 19.2, y: 3.85, prop: "lampiao" },
+          { x: 29.2, y: 3.15, prop: "lampiao" }
+        ],
+        spawn: { x: 4.5, y: 3.5, a: 0 },
+        entries: {
+          tasca: { x: 4.5, y: 3.5, a: 0 },
+          garagem: { x: 14.5, y: 3.5, a: 0 },
+          junta: { x: 24.5, y: 3.5, a: 0 },
+          feira: { x: 4.5, y: 3.5, a: 0 },
+          matos: { x: 14.5, y: 3.5, a: 0 },
+          gnr: { x: 24.5, y: 3.5, a: 0 }
+        },
+        grid: streetGrid(),
+        doors: [
+          { x: 4, y: 1, to: "tasca" },
+          { x: 14, y: 1, to: "garagem" },
+          { x: 24, y: 1, to: "junta" },
+          { x: 4, y: 6, to: "feira" },
+          { x: 14, y: 6, to: "matos" },
+          { x: 24, y: 6, to: "gnr" }
+        ],
+        doorTint: {
+          "4,1": "#8d3a32",
+          "14,1": "#5c6570",
+          "24,1": "#e4ddd0",
+          "4,6": "#e2b15a",
+          "14,6": "#6a3038",
+          "24,6": "#2f5c3a"
+        }
+      },
+      garagem: shopMap("garagem", "#4a4e55", "#2c3036", "#3a3e44", "#2a2e34"),
+      junta: shopMap("junta", "#d9d3c6", "#a8a294", "#c4bba8", "#8d8374"),
+      feira: shopMap("feira", "#e2b15a", "#a87830", "#c48a48", "#8a5a28"),
+      matos: shopMap("matos", "#4a3034", "#241418", "#3a2428", "#1c1014"),
+      gnr: shopMap("gnr", "#3e624c", "#1c3024", "#3a4a3c", "#243028")
+    };
+
+    function spawnFP(loc, entry) {
+      const map = WORLD[loc] || WORLD.tasca;
+      const spot = (entry && map.entries && map.entries[entry]) || map.spawn;
+      ui.fp = { loc: loc, x: spot.x, y: spot.y, a: spot.a, lock: 0.6, step: 0, bar: false };
+    }
+
+    function fpFacing(tx, ty) {
+      let d = Math.atan2(ty - ui.fp.y, tx - ui.fp.x) - ui.fp.a;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      return Math.abs(d) < 0.9;
+    }
+
+    function atBar() {
+      if (!ui.fp || ui.fp.loc !== "tasca" || !ui.cab) return false;
+      const focus = WORLD.tasca.focus;
+      const dist = Math.hypot(ui.fp.x - focus.x, ui.fp.y - focus.y);
+      const facing = fpFacing(focus.x, focus.y);
+      const was = !!ui.fp.bar;
+      if (ui.fp.bar) {
+        if (dist > 1.9 || !facing) ui.fp.bar = false;
+      } else if (dist < 1.35 && facing) ui.fp.bar = true;
+      if (was !== !!ui.fp.bar && !ui._barSync) {
+        ui._barSync = true;
+        render();
+        ui._barSync = false;
+      }
+      return !!ui.fp.bar;
+    }
+
+    function atCounter() {
+      if (!ui.fp || ui.fp.loc === "tasca" || ui.fp.loc === "rua") return false;
+      return Math.hypot(ui.fp.x - 3.5, ui.fp.y - 1.7) < 2.5;
+    }
+
+    function mapSolid(map, x, y) {
+      const row = map.grid[Math.floor(y)];
+      if (!row) return true;
+      const cell = row[Math.floor(x)];
+      return !cell || cell === "#";
+    }
+
+    function canStep(map, x, y) {
+      const r = 0.12;
+      return !mapSolid(map, x - r, y - r) && !mapSolid(map, x + r, y - r) && !mapSolid(map, x - r, y + r) && !mapSolid(map, x + r, y + r);
+    }
+
+    function useDoor(door) {
+      sfx("door");
+      if (door.to === "tasca") {
+        beginCab(true, "door");
+        return;
+      }
+      if (door.to === "rua") {
+        ui.scene = "rua";
+        ui.mode = ui.cab ? "cab" : "location";
+        spawnFP("rua", door.entry || "tasca");
+        touch();
+        render();
+        return;
+      }
+      state.location = door.to;
+      ui.scene = door.to;
+      ui.mode = ui.cab ? "cab" : "location";
+      spawnFP(door.to, "in");
+      touch();
+      render();
+    }
+
+    function tickFP(dt) {
+      if (ui.mode !== "cab" && ui.mode !== "location") return;
+      if (!ui.fp) spawnFP(ui.scene === "rua" ? "rua" : (state.location || "tasca"), ui.scene === "rua" ? "tasca" : "bar");
+      const p = ui.fp;
+      const map = WORLD[p.loc];
+      if (!map) return;
+      p.lock = Math.max(0, (p.lock || 0) - dt);
+      if (atBar()) {
+        if (held.s || held.arrowdown) {
+          const speed = 2.4 * dt;
+          const nx = p.x - Math.cos(p.a) * speed;
+          const ny = p.y - Math.sin(p.a) * speed;
+          if (canStep(map, nx, p.y)) p.x = nx;
+          if (canStep(map, p.x, ny)) p.y = ny;
+          p.step = (p.step || 0) + dt * 7;
+        }
+        return;
+      }
+      let turn = 0;
+      if (held.q || held.arrowleft) turn -= 1;
+      if (held.e || held.arrowright) turn += 1;
+      p.a += turn * 2.1 * dt + (ui.look || 0);
+      ui.look = 0;
+      let forward = 0;
+      let strafe = 0;
+      if (held.w || held.arrowup) forward += 1;
+      if (held.s || held.arrowdown) forward -= 1;
+      if (held.d) strafe += 1;
+      if (held.a) strafe -= 1;
+      if (forward || strafe) p.step = (p.step || 0) + dt * 7;
+      const speed = 2.6 * dt;
+      const nx = p.x + Math.cos(p.a) * forward * speed + Math.cos(p.a + Math.PI / 2) * strafe * speed;
+      const ny = p.y + Math.sin(p.a) * forward * speed + Math.sin(p.a + Math.PI / 2) * strafe * speed;
+      if (canStep(map, nx, p.y)) p.x = nx;
+      if (canStep(map, p.x, ny)) p.y = ny;
+      if (p.lock > 0) return;
+      const doorAt = (x, y) => {
+        const cx = Math.floor(x);
+        const cy = Math.floor(y);
+        if ((map.grid[cy] || "")[cx] !== "D") return null;
+        return (map.doors || []).find((d) => d.x === cx && d.y === cy) || null;
+      };
+      const door = doorAt(p.x, p.y) || doorAt(p.x + Math.cos(p.a) * 0.62, p.y + Math.sin(p.a) * 0.62);
+      if (door) useDoor(door);
+      if (ui.barkT > 0) {
+        ui.barkT -= dt;
+        if (ui.barkT <= 0) {
+          ui.bark = "";
+          ui.barkT = 0;
+          render();
+        }
+      }
+      const said = storyLine();
+      if (said !== ui.storySig) {
+        ui.storySig = said;
+        render();
+      }
+    }
+
+    function mixShade(hex, f) {
+      const n = parseInt(hex.slice(1), 16);
+      const r = Math.max(0, Math.min(255, ((n >> 16) & 255) * f)) | 0;
+      const gch = Math.max(0, Math.min(255, ((n >> 8) & 255) * f)) | 0;
+      const b = Math.max(0, Math.min(255, (n & 255) * f)) | 0;
+      return "rgb(" + r + "," + gch + "," + b + ")";
+    }
+
+    function castRay(map, px, py, angle) {
+      const sin = Math.sin(angle);
+      const cos = Math.cos(angle);
+      let mapX = Math.floor(px);
+      let mapY = Math.floor(py);
+      const deltaX = Math.abs(1 / (Math.abs(cos) < 1e-6 ? 1e-6 : cos));
+      const deltaY = Math.abs(1 / (Math.abs(sin) < 1e-6 ? 1e-6 : sin));
+      let stepX;
+      let stepY;
+      let sideX;
+      let sideY;
+      if (cos < 0) { stepX = -1; sideX = (px - mapX) * deltaX; }
+      else { stepX = 1; sideX = (mapX + 1 - px) * deltaX; }
+      if (sin < 0) { stepY = -1; sideY = (py - mapY) * deltaY; }
+      else { stepY = 1; sideY = (mapY + 1 - py) * deltaY; }
+      let hit = 0;
+      let side = 0;
+      for (let guard = 0; guard < 48 && !hit; guard++) {
+        if (sideX < sideY) {
+          sideX += deltaX;
+          mapX += stepX;
+          side = 0;
+        } else {
+          sideY += deltaY;
+          mapY += stepY;
+          side = 1;
+        }
+        const row = map.grid[mapY];
+        const cell = row ? row[mapX] : "#";
+        if (!row || cell === "#" || cell === "D") hit = cell === "D" ? 2 : 1;
+      }
+      const dist = Math.max(0.05, side === 0 ? sideX - deltaX : sideY - deltaY);
+      let hitX;
+      let hitY;
+      if (side === 0) {
+        hitX = stepX > 0 ? mapX : mapX + 1;
+        hitY = py + (hitX - px) * (sin / (Math.abs(cos) < 1e-6 ? 1e-6 : cos));
+      } else {
+        hitY = stepY > 0 ? mapY : mapY + 1;
+        hitX = px + (hitY - py) * (cos / (Math.abs(sin) < 1e-6 ? 1e-6 : sin));
+      }
+      const tex = side === 0 ? hitY : hitX;
+      return { dist: dist, hit: hit, side: side, mapX: mapX, mapY: mapY, u: tex - Math.floor(tex) };
+    }
+
+    function facadeKey(hit) {
+      const south = hit.mapY >= 5;
+      const x = hit.mapX;
+      if (south) return x < 9 ? "feira" : x < 19 ? "matos" : "gnr";
+      if (hit.mapX <= 0 || hit.mapX >= 33) return "muro";
+      return x < 9 ? "tasca" : x < 19 ? "garagem" : "junta";
+    }
+
+    const FACADE = {
+      tasca: { wall: "#8d4034", dark: "#5c2820", glow: "#ffb15a" },
+      garagem: { wall: "#5c6570", dark: "#3a4048", glow: "#9ad0ff" },
+      junta: { wall: "#e4ddd0", dark: "#b7b0a4", glow: "#f4e7c4" },
+      feira: { wall: "#e2b15a", dark: "#a87830", glow: "#ffe08a" },
+      matos: { wall: "#6a3038", dark: "#3a181c", glow: "#ffd27a" },
+      gnr: { wall: "#2f5c3a", dark: "#1c3024", glow: "#d7ead4" },
+      muro: { wall: "#6a5648", dark: "#3e3228", glow: "#c4b4a4" }
+    };
+
+    function drawProp(g, kind, screenX, horizon, size) {
+      if (kind === "balcao") {
+        const w = size * 2.3;
+        const h = size * 0.62;
+        const y = horizon - h * 0.05;
+        g.fillStyle = "#3a2418";
+        g.fillRect(screenX - w / 2, y, w, h);
+        g.fillStyle = "#c4a574";
+        g.fillRect(screenX - w / 2, y, w, Math.max(3, h * 0.14));
+        g.fillStyle = "#6b4228";
+        for (let i = 0; i < 5; i++) g.fillRect(screenX - w / 2 + 6 + i * (w / 5), y + h * 0.28, Math.max(4, w / 9), h * 0.55);
+        [["#e2b15a", -0.32], ["#2f6b3a", -0.12], ["#8d3a32", 0.1], ["#f4e7cf", 0.3]].forEach((b) => {
+          g.fillStyle = b[0];
+          g.fillRect(screenX + w * b[1], y - h * 0.42, Math.max(3, w * 0.06), h * 0.4);
+          g.fillStyle = "#2a2118";
+          g.fillRect(screenX + w * b[1] + 1, y - h * 0.52, Math.max(2, w * 0.025), h * 0.12);
+        });
+        return;
+      }
+      if (kind === "barril") {
+        const w = size * 0.72;
+        const h = size * 0.9;
+        const y = horizon - h * 0.85;
+        g.fillStyle = "#6b4228";
+        g.beginPath();
+        g.ellipse(screenX, y + h * 0.5, w / 2, h / 2, 0, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = "#2a1810";
+        g.lineWidth = Math.max(1, size * 0.04);
+        g.beginPath();
+        g.ellipse(screenX, y + h * 0.22, w * 0.42, h * 0.08, 0, 0, Math.PI * 2);
+        g.stroke();
+        g.beginPath();
+        g.ellipse(screenX, y + h * 0.78, w * 0.42, h * 0.08, 0, 0, Math.PI * 2);
+        g.stroke();
+        g.fillStyle = "#c4a574";
+        g.fillRect(screenX - 1, y + h * 0.4, 2, h * 0.16);
+        return;
+      }
+      if (kind === "caixa") {
+        const w = size * 0.8;
+        const h = size * 0.55;
+        const y = horizon - h;
+        g.fillStyle = "#c48a3a";
+        g.fillRect(screenX - w / 2, y, w, h);
+        g.strokeStyle = "#6a4018";
+        g.lineWidth = 1;
+        g.strokeRect(screenX - w / 2, y, w, h);
+        g.beginPath();
+        g.moveTo(screenX - w / 2, y + h * 0.5);
+        g.lineTo(screenX + w / 2, y + h * 0.5);
+        g.moveTo(screenX, y);
+        g.lineTo(screenX, y + h);
+        g.stroke();
+        return;
+      }
+      if (kind === "lampiao") {
+        const h = size * 1.5;
+        g.fillStyle = "#2a241e";
+        g.fillRect(screenX - 1.5, horizon - h, 3, h);
+        const glow = g.createRadialGradient(screenX, horizon - h, 2, screenX, horizon - h, size * 0.7);
+        glow.addColorStop(0, "rgba(255, 196, 110, 0.95)");
+        glow.addColorStop(1, "rgba(255, 160, 60, 0)");
+        g.fillStyle = glow;
+        g.beginPath();
+        g.arc(screenX, horizon - h, size * 0.7, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "#ffe0a8";
+        g.beginPath();
+        g.arc(screenX, horizon - h, Math.max(3, size * 0.12), 0, Math.PI * 2);
+        g.fill();
+        return;
+      }
+      if (kind === "cofre") {
+        const w = size * 0.7;
+        const h = size * 0.8;
+        const y = horizon - h;
+        g.fillStyle = "#2a2e34";
+        g.fillRect(screenX - w / 2, y, w, h);
+        g.strokeStyle = "#c4a574";
+        g.strokeRect(screenX - w / 2, y, w, h);
+        g.fillStyle = "#e2b15a";
+        g.beginPath();
+        g.arc(screenX, y + h * 0.55, Math.max(2, w * 0.12), 0, Math.PI * 2);
+        g.fill();
+        return;
+      }
+      if (kind === "faixa") {
+        const w = size * 0.9;
+        const y = horizon - size * 0.35;
+        g.fillStyle = "#1c6b3a";
+        g.fillRect(screenX - w / 2, y, w, size * 0.16);
+        g.fillStyle = "#c4473a";
+        g.fillRect(screenX - w / 2, y + size * 0.05, w, size * 0.05);
+        g.fillStyle = "#e6c56a";
+        g.fillRect(screenX - w * 0.08, y, w * 0.16, size * 0.16);
+        return;
+      }
+      if (kind === "santo") {
+        const h = size * 0.7;
+        const y = horizon - h;
+        g.fillStyle = "#f4e7cf";
+        g.fillRect(screenX - size * 0.16, y, size * 0.32, h);
+        g.fillStyle = "#2a4eb8";
+        g.beginPath();
+        g.arc(screenX, y + h * 0.28, size * 0.12, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "#e6c56a";
+        g.fillRect(screenX - size * 0.22, y + h * 0.86, size * 0.44, size * 0.08);
+        return;
+      }
+      if (kind === "quadro") {
+        const w = size * 0.9;
+        const h = size * 0.7;
+        const y = horizon - h * 1.3;
+        g.fillStyle = "#5c3a28";
+        g.fillRect(screenX - w / 2 - 2, y - 2, w + 4, h + 4);
+        g.fillStyle = "#f4e7cf";
+        g.fillRect(screenX - w / 2, y, w, h);
+        g.fillStyle = "#2a4eb8";
+        g.fillRect(screenX - w * 0.2, y + h * 0.25, w * 0.4, h * 0.45);
+      }
+    }
+
+    let fpCanvas = null;
+    let fpCtx = null;
+    let fpImg = null;
+    const HDW = 960;
+    const HDH = 540;
+    const RGBC = {};
+
+    function rgbOf(hex) {
+      let c = RGBC[hex];
+      if (!c) {
+        const n = parseInt(hex.slice(1), 16);
+        c = RGBC[hex] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      }
+      return c;
+    }
+
+    function hdStamp(data, x, y, r, gch, b) {
+      if (x < 0 || y < 0 || x >= HDW || y >= HDH) return;
+      const i = (y * HDW + x) << 2;
+      data[i] = r;
+      data[i + 1] = gch;
+      data[i + 2] = b;
+      data[i + 3] = 255;
+    }
+
+    function hdSpan(data, x, y0, y1, hex, light) {
+      const c = rgbOf(hex);
+      const yA = Math.max(0, y0 | 0);
+      const yB = Math.min(HDH - 1, y1 | 0);
+      const x1 = x + 1 < HDW ? x + 1 : x;
+      for (let y = yA; y <= yB; y++) {
+        const n = (x * 17 + y * 13) & 31;
+        const k = Math.max(0, Math.min(1.08, light * (0.94 + n / 520)));
+        const r = Math.min(255, c[0] * k) | 0;
+        const gch = Math.min(255, c[1] * k) | 0;
+        const b = Math.min(255, c[2] * k) | 0;
+        hdStamp(data, x, y, r, gch, b);
+        if (x1 !== x) hdStamp(data, x1, y, r, gch, b);
+      }
+    }
+
+    function renderHD(p, map, horizonHD) {
+      if (!fpCanvas) {
+        fpCanvas = document.createElement("canvas");
+        fpCanvas.width = HDW;
+        fpCanvas.height = HDH;
+        fpCtx = fpCanvas.getContext("2d", { alpha: false });
+        fpImg = fpCtx.createImageData(HDW, HDH);
+      }
+      const data = fpImg.data;
+      const fov = 1.9;
+      const dirX = Math.cos(p.a);
+      const dirY = Math.sin(p.a);
+      const planeX = Math.cos(p.a + Math.PI / 2) * Math.tan(fov / 2);
+      const planeY = Math.sin(p.a + Math.PI / 2) * Math.tan(fov / 2);
+      const skyTop = map.out ? [18, 28, 48] : (p.loc === "tasca" ? [42, 26, 18] : [28, 22, 18]);
+      const skyBot = map.out ? [214, 156, 112] : [72, 48, 34];
+      const hY = Math.max(1, horizonHD | 0);
+      for (let y = 0; y < HDH; y += 2) {
+        const t = Math.max(0, Math.min(1, y / hY));
+        const r = (skyTop[0] + (skyBot[0] - skyTop[0]) * t) | 0;
+        const gch = (skyTop[1] + (skyBot[1] - skyTop[1]) * t) | 0;
+        const b = (skyTop[2] + (skyBot[2] - skyTop[2]) * t) | 0;
+        const beam = !map.out && p.loc === "tasca" && (y % 54) < 7;
+        for (let x = 0; x < HDW; x += 2) {
+          const rr = beam ? (r * 0.55) | 0 : r;
+          const gg = beam ? (gch * 0.5) | 0 : gch;
+          const bb = beam ? (b * 0.45) | 0 : b;
+          hdStamp(data, x, y, rr, gg, bb);
+          hdStamp(data, x + 1, y, rr, gg, bb);
+          if (y + 1 < HDH) {
+            hdStamp(data, x, y + 1, rr, gg, bb);
+            hdStamp(data, x + 1, y + 1, rr, gg, bb);
+          }
+        }
+      }
+      const alt = map.floorAlt || "#2a1c14";
+      for (let y = hY; y < HDH; y += 2) {
+        const perp = 216 / Math.max(1, y - horizonHD);
+        const fog = Math.max(0.46, 1 - perp * 0.065);
+        for (let x = 0; x < HDW; x += 2) {
+          const cam = x / 480 - 1;
+          const wx = p.x + perp * (dirX + planeX * cam);
+          const wy = p.y + perp * (dirY + planeY * cam);
+          let base;
+          let tone = 1;
+          if (map.out) {
+            const fx = wx * 7.5;
+            const fy = wy * 7.5;
+            const fu = fx - Math.floor(fx);
+            const fv = fy - Math.floor(fy);
+            const edge = Math.max(Math.abs(fu - 0.5), Math.abs(fv - 0.5));
+            const onRoad = wy > 2.2 && wy < 5.3;
+            const n = (Math.floor(fx) * 13 + Math.floor(fy) * 7) & 7;
+            base = onRoad ? [132, 118, 104] : [78, 68, 60];
+            tone = 0.82 + n * 0.035;
+            if (edge > 0.46) tone *= 0.55;
+            else if (fu < 0.22 && fv < 0.22) tone *= 1.12;
+          } else {
+            const plank = Math.floor(wx * 1.7);
+            const u = (wx * 1.7) - plank;
+            const n = (plank * 17) & 7;
+            base = p.loc === "tasca" ? [126, 78, 46] : rgbOf(map.floor);
+            tone = 0.78 + n * 0.04;
+            if (u < 0.045) tone *= 0.45;
+            if (((Math.floor(wy * 22) + plank) & 9) === 0) tone *= 0.88;
+          }
+          const c = base;
+          const k = fog * tone * (0.96 + ((x + y) & 7) / 140);
+          const r = Math.min(255, c[0] * k) | 0;
+          const gch = Math.min(255, c[1] * k) | 0;
+          const b = Math.min(255, c[2] * k) | 0;
+          hdStamp(data, x, y, r, gch, b);
+          hdStamp(data, x + 1, y, r, gch, b);
+          if (y + 1 < HDH) {
+            hdStamp(data, x, y + 1, r, gch, b);
+            hdStamp(data, x + 1, y + 1, r, gch, b);
+          }
+        }
+      }
+      const zbuf = new Array(320);
+      const doorMarks = {};
+      for (let x = 0; x < HDW; x += 2) {
+        const angle = p.a - fov / 2 + (x / HDW) * fov;
+        const hit = castRay(map, p.x, p.y, angle);
+        const lx = Math.max(0, Math.min(319, (x / 3) | 0));
+        zbuf[lx] = hit.dist;
+        if (lx + 1 < 320) zbuf[lx + 1] = hit.dist;
+        const colH = Math.min(520, 450 / hit.dist);
+        const top = horizonHD - colH / 2;
+        const fog = Math.max(0.4, 1 - hit.dist * 0.07);
+        const shade = fog * (hit.side ? 0.74 : 1);
+        const u = hit.u || 0;
+        let hex = hit.side ? map.wallDark : map.wall;
+        let face = null;
+        if (map.out && hit.hit !== 2) {
+          face = FACADE[facadeKey(hit)] || FACADE.muro;
+          hex = hit.side ? face.dark : face.wall;
+        } else if (p.loc === "tasca" && hit.hit !== 2) {
+          hex = hit.side ? "#8d7058" : "#cbb292";
+        }
+        if (hit.hit === 2) {
+          const tint = (map.doorTint && map.doorTint[hit.mapX + "," + hit.mapY]) || "#6a4630";
+          hex = (u < 0.08 || u > 0.92) ? "#2a1810" : (hit.side ? "#4a3024" : tint);
+        } else if (u < 0.035 || u > 0.965) hex = "#1c120c";
+        hdSpan(data, x, top, top + colH, hex, shade);
+        if (hit.hit === 2 && u > 0.08 && u < 0.92) {
+          hdSpan(data, x, top + colH * 0.4, top + colH * 0.46, "#f0d7a2", Math.min(1, shade + 0.2));
+          if (u > 0.7 && u < 0.78) hdSpan(data, x, top + colH * 0.5, top + colH * 0.58, "#e6c56a", 1);
+          const key = hit.mapX + "," + hit.mapY;
+          const markX = x / 3;
+          if (!doorMarks[key] || Math.abs(markX - 160) < Math.abs(doorMarks[key].x - 160)) {
+            doorMarks[key] = { x: markX, y: top / 3, h: colH / 3, dist: hit.dist };
+          }
+        } else if (map.out && face && colH > 28) {
+          if (u > 0.3 && u < 0.7) {
+            const mullion = u > 0.47 && u < 0.53;
+            hdSpan(data, x, top + colH * 0.2, top + colH * 0.52, mullion ? face.dark : face.glow, Math.min(1.05, shade + 0.18));
+            hdSpan(data, x, top + colH * 0.34, top + colH * 0.37, face.dark, shade);
+          }
+          if (face === FACADE.feira) hdSpan(data, x, top, top + colH * 0.1, (Math.floor(u * 8) % 2) ? "#8d3a32" : "#f4e7cf", shade);
+          if (face === FACADE.gnr) hdSpan(data, x, top + colH * 0.58, top + colH * 0.64, "#f4f1ea", shade);
+          if (face === FACADE.junta && u > 0.4 && u < 0.6) hdSpan(data, x, top + colH * 0.28, top + colH * 0.46, "#2a4eb8", shade);
+          hdSpan(data, x, top + colH * 0.84, top + colH, "#1a100c", shade * 0.8);
+        } else if (p.loc === "tasca" && hit.hit !== 2 && colH > 30) {
+          hdSpan(data, x, top + colH * 0.6, top + colH, "#5c3a28", shade);
+          if (hit.mapY === 0 && (u % 0.16) < 0.05) {
+            const bottles = ["#e2b15a", "#2f6b3a", "#8d3a32", "#f4e7cf"];
+            hdSpan(data, x, top + colH * 0.16, top + colH * 0.36, bottles[Math.floor(u * 10) % 4], Math.min(1, shade + 0.1));
+          }
+        }
+      }
+      fpCtx.putImageData(fpImg, 0, 0);
+      if (map.out) {
+        const moonX = 140;
+        const moonY = 78 + (horizonHD - 234) * 0.15;
+        const glow = fpCtx.createRadialGradient(moonX, moonY, 8, moonX, moonY, 70);
+        glow.addColorStop(0, "rgba(255, 244, 220, 0.95)");
+        glow.addColorStop(0.25, "rgba(255, 228, 190, 0.35)");
+        glow.addColorStop(1, "rgba(255, 228, 190, 0)");
+        fpCtx.fillStyle = glow;
+        fpCtx.beginPath();
+        fpCtx.arc(moonX, moonY, 70, 0, Math.PI * 2);
+        fpCtx.fill();
+        fpCtx.fillStyle = "rgba(255, 220, 190, 0.12)";
+        fpCtx.beginPath();
+        fpCtx.ellipse(640, 110, 180, 22, -0.1, 0, Math.PI * 2);
+        fpCtx.fill();
+      } else {
+        const lamp = fpCtx.createRadialGradient(480, 36, 6, 480, 70, 240);
+        lamp.addColorStop(0, "rgba(255, 214, 150, 0.55)");
+        lamp.addColorStop(1, "rgba(255, 170, 80, 0)");
+        fpCtx.fillStyle = lamp;
+        fpCtx.fillRect(0, 0, HDW, hY);
+      }
+      const vig = fpCtx.createRadialGradient(480, 270, 160, 480, 300, 560);
+      vig.addColorStop(0, "rgba(0,0,0,0)");
+      vig.addColorStop(1, "rgba(12, 6, 4, 0.38)");
+      fpCtx.fillStyle = vig;
+      fpCtx.fillRect(0, 0, HDW, HDH);
+      return { zbuf: zbuf, doorMarks: doorMarks, fov: fov };
+    }
+
+    function drawFP(g) {
+      const p = ui.fp;
+      const map = WORLD[p.loc] || WORLD.tasca;
+      const bob = Math.sin(p.step || 0) * 3;
+      const horizon = 78 + bob;
+      const hd = renderHD(p, map, horizon * 3);
+      const fov = hd.fov;
+      const zbuf = hd.zbuf;
+      const doorMarks = hd.doorMarks;
+      const saved = g.getTransform();
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.imageSmoothingEnabled = true;
+      g.drawImage(fpCanvas, 0, 0, g.canvas.width, g.canvas.height);
+      g.setTransform(saved);
+      const doorNames = { tasca: "O Pica-Pau", garagem: "Garagem", junta: "Junta", feira: "Feira", matos: "Sr. Matos", gnr: "GNR", rua: "Rua" };
+      g.font = "700 10px Georgia, 'Times New Roman', serif";
+      g.textAlign = "center";
+      g.textBaseline = "bottom";
+      Object.keys(doorMarks).forEach((key) => {
+        const mark = doorMarks[key];
+        if (mark.dist > 9) return;
+        const parts = key.split(",");
+        const door = (map.doors || []).find((d) => d.x === Number(parts[0]) && d.y === Number(parts[1]));
+        if (!door) return;
+        const label = doorNames[door.to] || door.to;
+        const tw = Math.max(36, label.length * 6.2);
+        g.fillStyle = "#3a2418";
+        g.fillRect(mark.x - tw / 2 - 2, mark.y - 18, tw + 4, 15);
+        g.fillStyle = "#e7d3b0";
+        g.fillRect(mark.x - tw / 2, mark.y - 16, tw, 11);
+        g.fillStyle = "#3a2418";
+        g.fillText(label, mark.x, mark.y - 6);
+      });
+      g.textAlign = "left";
+      g.textBaseline = "alphabetic";
+      const caso = currentStep();
+      const sprites = (map.sprites || []).filter((spr) => {
+        if (!spr.who || !caso || !caso.who) return true;
+        if (p.loc === "rua" && caso.loc !== "rua" && spr.who === caso.who) return false;
+        return true;
+      }).slice();
+      if (caso && caso.loc === p.loc && caso.who && !sprites.some((s) => s.who === caso.who && Math.hypot(s.x - caso.x, s.y - caso.y) < 1.2)) {
+        sprites.push({ x: caso.x, y: caso.y, who: caso.who, name: caso.name, mood: "talk", hand: caso.hand || "" });
+      }
+      if (caso && caso.loc === p.loc && caso.prop && state.carry !== caso.item) sprites.push({ x: caso.x, y: caso.y, prop: caso.prop });
+      if (p.loc === "tasca") {
+        sprites.push({ x: 3.5, y: 2.35, prop: "balcao" });
+        sprites.push({ x: 1.55, y: 3.3, prop: "barril" });
+        sprites.push({ x: 6.35, y: 4.6, prop: "barril" });
+        sprites.push({ x: 1.7, y: 6.5, prop: "barril" });
+      }
+      if (p.loc === "tasca" && state.pending) {
+        const person = personById(state.pending);
+        if (person) sprites.push({ x: WORLD.tasca.focus.x, y: WORLD.tasca.focus.y, who: person.sprite, name: person.name, hand: "glass", mood: "talk" });
+      }
+      sprites.forEach((spr) => { spr._dist = Math.hypot(spr.x - p.x, spr.y - p.y); });
+      sprites.sort((a, b) => b._dist - a._dist);
+      sprites.forEach((spr) => {
+        const dist = spr._dist;
+        if (dist < 0.25) return;
+        let ang = Math.atan2(spr.y - p.y, spr.x - p.x) - p.a;
+        while (ang > Math.PI) ang -= Math.PI * 2;
+        while (ang < -Math.PI) ang += Math.PI * 2;
+        if (Math.abs(ang) > fov * 0.7) return;
+        const screenX = 160 + Math.tan(ang) / Math.tan(fov / 2) * 160;
+        const size = Math.min(74, 108 / dist);
+        const col = Math.max(0, Math.min(318, screenX | 0));
+        if (zbuf[col] && zbuf[col] + 0.15 < dist) return;
+        if (spr.prop && !spr.who) {
+          drawProp(g, spr.prop, screenX, horizon, size);
+          return;
+        }
+        g.save();
+        g.fillStyle = "rgba(10, 6, 4, 0.28)";
+        g.beginPath();
+        g.ellipse(screenX, horizon + 2, size * 0.22, size * 0.06, 0, 0, Math.PI * 2);
+        g.fill();
+        g.restore();
+        drawGuy(g, spr.who, screenX - size * 0.22, horizon - size * 0.78, size / 26, spr.mood || "talk", spr.hand || "");
+        if (spr.name && dist < 4.2) {
+          g.font = "700 8px Georgia, 'Times New Roman', serif";
+          g.textAlign = "center";
+          g.textBaseline = "bottom";
+          const tw = Math.max(28, spr.name.length * 5);
+          const ny = horizon - size * 0.82;
+          g.fillStyle = "rgba(28, 16, 10, 0.78)";
+          g.fillRect(screenX - tw / 2, ny - 11, tw, 11);
+          g.fillStyle = "#f6e7c8";
+          g.fillText(spr.name, screenX, ny - 1);
+          g.textAlign = "left";
+          g.textBaseline = "alphabetic";
+        }
+      });
+      if (caso && caso.loc === p.loc) {
+        const dx = caso.x - p.x;
+        const dy = caso.y - p.y;
+        const distM = Math.hypot(dx, dy);
+        let angM = Math.atan2(dy, dx) - p.a;
+        while (angM > Math.PI) angM -= Math.PI * 2;
+        while (angM < -Math.PI) angM += Math.PI * 2;
+        if (distM > 0.4 && Math.abs(angM) < fov * 0.7) {
+          const mx = 160 + Math.tan(angM) / Math.tan(fov / 2) * 160;
+          const my = horizon - Math.min(90, 86 / distM) + Math.sin(tick / 7) * 4;
+          g.fillStyle = "#e6c56a";
+          g.beginPath();
+          g.moveTo(mx, my + 10);
+          g.lineTo(mx - 8, my - 2);
+          g.lineTo(mx + 8, my - 2);
+          g.closePath();
+          g.fill();
+        }
+      }
+      const say = (ui.mode === "cab" || ui.mode === "location") ? storyLine() : "";
+      if (say && !atBar()) {
+        const rows = wrapWords(say, 42).slice(0, 2);
+        const bh = 8 + rows.length * 12;
+        g.fillStyle = "rgba(22, 12, 8, 0.9)";
+        g.beginPath();
+        g.roundRect(10, 4, 300, bh, 8);
+        g.fill();
+        g.fillStyle = "#f6e7c8";
+        g.font = "700 9px Georgia, 'Times New Roman', serif";
+        g.textAlign = "center";
+        g.textBaseline = "top";
+        rows.forEach((ln, i) => g.fillText(ln, 160, 8 + i * 12));
+        g.textAlign = "left";
+        g.textBaseline = "alphabetic";
+      }
+      g.fillStyle = "rgba(255,255,255,0.85)";
+      g.fillRect(159, horizon - 1, 2, 2);
+      if (!map.out) {
+        g.fillStyle = "rgba(40, 18, 8, 0.16)";
+        g.fillRect(0, 0, 14, 180);
+        g.fillRect(306, 0, 14, 180);
+      }
+    }
+
+    function draw(scene) {
+      const canvas = document.getElementById("view");
+      const g = canvas.getContext("2d");
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, canvas.width, canvas.height);
+      g.setTransform(canvas.width / 320, 0, 0, canvas.height / 180, 0, 0);
+      g.imageSmoothingEnabled = true;
+      g.globalAlpha = 1;
+      ui.spots = ui.spots || [];
+      ui.spots.length = 0;
+      if (scene === "title" || ui.mode === "confirm") drawTitle(g);
+      else if (ui.fp && ui.mode !== "notebook") {
+        if (atBar()) drawCab(g);
+        else {
+          drawFP(g);
+          if (atCounter()) paintCounter(g);
+        }
+      } else if (scene === "rua") drawRua(g);
+      else drawRoom(g, scene || "tasca");
+      drawFlash(g);
+      drawFloats(g);
+      drawHot(g);
+      if (ui.mode === "result" || ui.mode === "over" || ui.mode === "confirm") {
+        const lines = ui.lines || [];
+        const beat = lines[Math.min(ui.beat || 0, Math.max(0, lines.length - 1))] || "";
+        const rows = wrapWords(beat, 40).slice(0, 6);
+        g.fillStyle = "rgba(12, 8, 6, 0.72)";
+        g.fillRect(0, 0, 320, 180);
+        g.fillStyle = "#f4e6cf";
+        g.beginPath();
+        g.roundRect(14, 12, 292, 156, 12);
+        g.fill();
+        g.fillStyle = "#6a3028";
+        g.font = "700 13px Georgia, 'Times New Roman', serif";
+        g.textAlign = "center";
+        g.textBaseline = "top";
+        g.fillText(ui.title || "", 160, 22);
+        g.fillStyle = "#2a2118";
+        g.font = "600 11px Georgia, 'Times New Roman', serif";
+        rows.forEach((ln, i) => g.fillText(ln, 160, 46 + i * 15));
+        if ((ui.mode === "result" || ui.mode === "over") && (ui.beat || 0) < lines.length - 1) {
+          g.fillStyle = "#8d3a32";
+          g.font = "700 10px Georgia, 'Times New Roman', serif";
+          g.fillText("clica para continuar", 160, 148);
+        }
+        g.textAlign = "left";
+        g.textBaseline = "alphabetic";
+      }
+    }
+
+    function choose(choice) {
+      if (!choice || choice.disabled) return;
+      try {
+        unlockAudio();
+        choice.fn();
+      } catch (err) {
+        console.error(err);
+        window.__tascaErrors = window.__tascaErrors || [];
+        window.__tascaErrors.push(String(err && err.message || err));
+        showText("O Zé engasgou-se", [
+          "Houve um soluço no motor da tasca.",
+          String(err && err.message || err)
+        ], [{ label: "Voltar ao balcão", fn: () => arrive(state.location || "tasca", true) }], state.location || "tasca", "blip");
+      }
+    }
+
+    function confirmNew() {
+      const returnMode = ui.mode;
+      const returnScene = ui.scene;
+      ui.mode = "confirm";
+      ui.scene = "title";
+      ui.beat = 0;
+      ui.title = "Deitar a gravação abaixo?";
+      ui.lines = ["Já existe um Zé gravado neste browser. Novo jogo apaga a tasca, a dívida e o caderno. Ele não assina termo nenhum."];
+      ui.resultChoices = [
+        { label: "Sim, começar do zero", fn: startNew },
+        {
+          label: "Não, ficar com este Zé",
+          fn: () => {
+            if (returnMode === "title" || returnMode === "confirm") showTitle();
+            else {
+              ui.mode = returnMode === "notebook" ? "notebook" : "location";
+              ui.scene = returnScene || state.location;
+              render();
+            }
+          }
+        }
+      ];
+      render();
+    }
+
+    function showTitle() {
+      ui = blankUi();
+      ui.mode = "title";
+      if (!state) state = freshState();
+      render();
+    }
+
+    function startNew() {
+      const sound = state ? state.sound : true;
+      state = freshState();
+      state.sound = sound;
+      freshQueue();
+      ui.mode = "result";
+      ui.scene = "tasca";
+      ui.visitor = null;
+      ui.shake = false;
+      const g = goal();
+      ui.title = "Abre-se a porta do Pica-Pau";
+      ui.lines = [
+        "És o Zé. O Pica-Pau deve " + euro(state.debt) + " ao Sr. Matos.",
+        "Meta: " + g.title + ", " + euro(g.cost) + ". O honesto não chega lá.",
+        "As maroscas pagam. À noite, cobram."
+      ];
+      ui.beat = 0;
+      ui.resultChoices = [{ label: "Entrar na tasca", fn: () => arrive("tasca", true) }];
+      sfx("door");
+      touch();
+      render();
+    }
+
+    function continueGame() {
+      const data = peekSave();
+      if (!data) return;
+      state = normalize(data);
+      ensureTale();
+      ui.visitor = null;
+      if (state.location === "tasca") beginCab(true, "bar");
+      else {
+        ui.mode = "location";
+        ui.scene = state.location;
+        spawnFP(state.location, "in");
+        sfx("door");
+        render();
+      }
+    }
+
+    function openNotebook() {
+      if (ui.mode !== "location" && ui.mode !== "notebook" && ui.mode !== "cab") return;
+      ui.mode = "notebook";
+      ui.scene = state.location;
+      sfx("blip");
+      render();
+    }
+
+    function toggleSound() {
+      state.sound = !state.sound;
+      if (state.sound) {
+        unlockAudio();
+        sfx("blip");
+      }
+      if (ui.mode !== "title" && ui.mode !== "confirm") touch();
+      render();
+    }
+
+    document.getElementById("ui").addEventListener("click", (event) => {
+      const choiceBtn = event.target.closest("#choices button");
+      if (choiceBtn) {
+        const choice = (ui.choicesLive || [])[Number(choiceBtn.dataset.i)];
+        choose(choice);
+        return;
+      }
+      const locBtn = event.target.closest("#nav button");
+      if (locBtn && !locBtn.disabled) {
+        arrive(locBtn.dataset.loc, false);
+        return;
+      }
+      if (event.target.closest("#btn-rua")) openStreet();
+      if (event.target.closest("#btn-book")) openNotebook();
+      if (event.target.closest("#btn-sound")) toggleSound();
+      if (event.target.closest("#copy") && ui.mode === "act") endAct();
+      if (event.target.closest("#copy") && moreBeats()) nextBeat();
+    });
+
+    function openStreet() {
+      if (ui.mode !== "location" && ui.mode !== "notebook" && ui.mode !== "cab") return;
+      ui.scene = "rua";
+      ui.visitor = null;
+      ui.mode = ui.cab ? "cab" : "location";
+      spawnFP("rua", WORLD.rua.entries[state.location] ? state.location : "tasca");
+      sfx("door");
+      render();
+    }
+
+    function canvasPoint(event) {
+      const box = event.currentTarget.getBoundingClientRect();
+      return {
+        x: (event.clientX - box.left) * (320 / box.width),
+        y: (event.clientY - box.top) * (180 / box.height)
+      };
+    }
+
+    const view = document.getElementById("view");
+    view.addEventListener("mousemove", (event) => {
+      const point = canvasPoint(event);
+      ui.mx = point.x;
+      ui.my = point.y;
+      if ((ui.mode === "cab" || ui.mode === "location") && !atBar()) ui.look = (ui.look || 0) + event.movementX * 0.0045;
+      const hot = (ui.spots || []).some((s) => point.x >= s.x && point.x <= s.x + s.w && point.y >= s.y && point.y <= s.y + s.h);
+      view.style.cursor = hot ? "pointer" : "crosshair";
+    });
+    view.addEventListener("mouseleave", () => {
+      ui.mx = null;
+      ui.my = null;
+    });
+    view.addEventListener("pointerdown", (event) => {
+      if (ui.mode !== "cab" || !atBar()) return;
+      unlockAudio();
+      event.preventDefault();
+      const point = canvasPoint(event);
+      ui.mx = point.x;
+      ui.my = point.y;
+      cabDown(point);
+    });
+    view.addEventListener("pointermove", (event) => {
+      if (ui.mode !== "cab" || !ui.cab) return;
+      const point = canvasPoint(event);
+      ui.mx = point.x;
+      ui.my = point.y;
+      const c = ui.cab;
+      if (c.drag != null) {
+        if (point.x - c.drag > 52 && state.pending && !(c.flashT > 0)) {
+          c.drag = null;
+          const person = personById(state.pending);
+          if (person) doKick(person);
+        }
+        return;
+      }
+      if (c.pour || c.flashT > 0) return;
+      if (point.y > 108 && point.x >= 48 && point.x <= 120) c.bottle = "honesto";
+      if (point.y > 108 && point.x >= 200 && point.x <= 270 && peekIllegal()) c.bottle = "golpe";
+    });
+    view.addEventListener("pointerup", () => {
+      if (ui.mode !== "cab" || !ui.cab) return;
+      if (ui.cab.pour) releasePour();
+      ui.cab.pour = false;
+      if (ui.cab.brakePointer) {
+        ui.cab.brake = false;
+        ui.cab.brakePointer = false;
+      }
+      ui.cab.listening = false;
+      ui.cab.drag = null;
+    });
+    view.addEventListener("pointerleave", () => {
+      if (ui.mode !== "cab" || !ui.cab) return;
+      if (ui.cab.pour) releasePour();
+      ui.cab.pour = false;
+      if (ui.cab.brakePointer) {
+        ui.cab.brake = false;
+        ui.cab.brakePointer = false;
+      }
+      ui.cab.listening = false;
+      ui.cab.drag = null;
+    });
+    view.addEventListener("click", (event) => {
+      unlockAudio();
+      if (ui.mode === "cab" && atBar()) return;
+      if (ui.mode === "act") {
+        endAct();
+        return;
+      }
+      if (moreBeats()) {
+        nextBeat();
+        return;
+      }
+      const point = canvasPoint(event);
+      const hit = (ui.spots || []).slice().reverse().find((s) => point.x >= s.x && point.x <= s.x + s.w && point.y >= s.y && point.y <= s.y + s.h);
+      if (!hit) {
+        if (canWalk()) walkTo(point.x - 14, point.y - 46, null);
+        return;
+      }
+      try {
+        hit.fn();
+      } catch (err) {
+        console.error(err);
+        window.__tascaErrors = window.__tascaErrors || [];
+        window.__tascaErrors.push(String(err && err.message || err));
+      }
+    });
+
+    const held = {};
+    document.addEventListener("keydown", (event) => {
+      const key = event.key.toLowerCase();
+      if (key === "arrowleft" || key === "arrowright" || key === "arrowup" || key === "arrowdown" || key === "a" || key === "d" || key === "w" || key === "s" || key === "q") {
+        held[key] = true;
+        event.preventDefault();
+      }
+      if ((ui.mode === "cab" || ui.mode === "location") && key === "e" && !event.repeat) {
+        if (atBar() && ui.cab && state.pending && !(ui.cab.flashT > 0)) {
+          ui.cab.listening = true;
+          ui.cab.pour = false;
+        } else if (talkTale()) {
+          event.preventDefault();
+          return;
+        } else held.e = true;
+        event.preventDefault();
+      }
+      if (ui.mode === "cab" && ui.cab && !event.repeat && !(ui.cab.flashT > 0)) {
+        if (key === "shift") {
+          event.preventDefault();
+          if (atBar()) {
+            ui.cab.brake = true;
+            ui.cab.pour = false;
+          }
+          return;
+        }
+        if (event.key === " " || event.key === "Enter") {
+          event.preventDefault();
+          if (atBar() && state.pending) {
+            ui.cab.pour = true;
+            ui.cab.brake = false;
+          }
+          return;
+        }
+        if (key === "l") {
+          event.preventDefault();
+          if (atBar() && state.pending) {
+            ui.cab.listening = true;
+            ui.cab.pour = false;
+          }
+          return;
+        }
+        if (key === "k" && state.pending) {
+          const person = personById(state.pending);
+          if (person) doKick(person);
+          return;
+        }
+        if (key === "f") {
+          endDay();
+          return;
+        }
+      }
+      if (event.repeat) return;
+      if (event.key === "m" || event.key === "M") {
+        toggleSound();
+        return;
+      }
+      if ((event.key === " " || event.key === "Enter") && event.target.tagName !== "BUTTON" && moreBeats()) {
+        event.preventDefault();
+        nextBeat();
+        return;
+      }
+      const n = Number(event.key);
+      if (n >= 1 && n <= 9) {
+        const choice = (ui.choicesLive || [])[n - 1];
+        if (choice && !choice.disabled) {
+          event.preventDefault();
+          choose(choice);
+        }
+      }
+    });
+    document.addEventListener("keyup", (event) => {
+      const key = event.key.toLowerCase();
+      held[key] = false;
+      if (ui.mode === "cab" && ui.cab) {
+        if (event.key === " " || event.key === "Enter") releasePour();
+        if (key === "shift") ui.cab.brake = false;
+        if (key === "l" || key === "e") ui.cab.listening = false;
+      }
+    });
+
+    window.addEventListener("error", (event) => {
+      window.__tascaErrors = window.__tascaErrors || [];
+      window.__tascaErrors.push(String(event.message || event.error || "erro"));
+    });
+
+    function canWalk() {
+      return false;
+    }
+
+    function ensureHero() {
+      const scene = ui.scene || state.location || "tasca";
+      if (ui.hero && ui.hero.scene === scene) return ui.hero;
+      const born = scene === "rua" ? { x: 146, y: 132 } : { x: 36, y: 104 };
+      ui.hero = { scene: scene, x: born.x, y: born.y, tx: null, ty: null, job: null };
+      return ui.hero;
+    }
+
+    function walkTo(x, y, job) {
+      const h = ensureHero();
+      h.tx = x;
+      h.ty = y;
+      h.job = job || null;
+    }
+
+    function grabPerson() {
+      if (!state.pending) {
+        if (!state.queue.length) return null;
+        state.pending = state.queue.shift();
+        if (state.pending === "albertina") state.tutorialDone = true;
+      }
+      const person = personById(state.pending);
+      if (person) ui.visitor = person.sprite;
+      return person;
+    }
+
+    function moveHero() {
+      if (!canWalk()) return;
+      const h = ensureHero();
+      let dx = 0;
+      let dy = 0;
+      if (held.arrowleft || held.a) dx -= 1;
+      if (held.arrowright || held.d) dx += 1;
+      if (held.arrowup || held.w) dy -= 1;
+      if (held.arrowdown || held.s) dy += 1;
+      if (dx || dy) {
+        h.tx = null;
+        h.job = null;
+        const len = Math.hypot(dx, dy);
+        h.x += dx / len * 1.5;
+        h.y += dy / len * 1.5;
+      } else if (h.tx != null) {
+        const vx = h.tx - h.x;
+        const vy = h.ty - h.y;
+        const dist = Math.hypot(vx, vy);
+        if (dist < 4) {
+          h.x = h.tx;
+          h.y = h.ty;
+          h.tx = null;
+          const job = h.job;
+          h.job = null;
+          if (job) job();
+        } else {
+          const step = Math.min(2.2, dist);
+          h.x += vx / dist * step;
+          h.y += vy / dist * step;
+        }
+      }
+      if ((ui.scene || state.location) === "rua") {
+        h.x = clamp(h.x, 2, 286);
+        h.y = clamp(h.y, 118, 140);
+      } else {
+        h.x = clamp(h.x, 2, 270);
+        h.y = clamp(h.y, 92, 118);
+      }
+    }
+
+    function fitView() {
+      const screen = document.getElementById("screen");
+      const crt = document.getElementById("crt");
+      const view = document.getElementById("view");
+      const foot = document.getElementById("foot");
+      const sw = screen.clientWidth;
+      if (!sw) return;
+      const crtRect = crt.getBoundingClientRect();
+      const viewRect = view.getBoundingClientRect();
+      const footRect = foot.getBoundingClientRect();
+      const above = Math.max(0, viewRect.top - crtRect.top);
+      const below = Math.max(0, footRect.bottom - viewRect.bottom);
+      const avail = Math.max(120, crtRect.height - above - below - 8);
+      const scale = Math.min(sw / 320, avail / 180);
+      const w = Math.floor(320 * scale);
+      const h = Math.floor(180 * scale);
+      if (Math.abs(view.clientWidth - w) > 1 || Math.abs(view.clientHeight - h) > 1) {
+        view.style.width = w + "px";
+        view.style.height = h + "px";
+      }
+    }
+
+    let lastT = 0;
+    function loop(now) {
+      const dt = lastT ? Math.min(0.05, ((now || 0) - lastT) / 1000) : 0.016;
+      lastT = now || 0;
+      tick += 1;
+      fitView();
+      tickFP(dt);
+      moveHero();
+      if (ui.mode === "cab") tickCab(dt);
+      if (ui.mode === "talk") ui.arrive = Math.min(1, (ui.arrive || 0) + 0.08);
+      if (ui.mode === "act" && ui.act) {
+        ui.act.t += 1;
+        if (ui.act.t >= 72) endAct();
+      }
+      const scene = (ui.mode === "title" || ui.mode === "confirm") ? "title" : (ui.scene || state.location || "tasca");
+      draw(scene);
+      requestAnimationFrame(loop);
+    }
+
+    showTitle();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
