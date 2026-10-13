@@ -17,22 +17,27 @@
   Monetização, sem servidor:
   window.TASCA_HOST = {
     supportUrl: "https://o-teu-link-de-pagamento",
+    rentUrl: "",
     ads: {
       parede: { image: "https://…/cartaz.jpg", href: "https://…", title: "Marca" },
       rua: { image: "https://…/placard.jpg", href: "https://…", title: "Marca" }
     }
   };
-  Sem image, o papel diz que se aluga. Um clique abre o href noutro separador. A noite não pára.
+  Sem image, o papel diz que se aluga e o clique abre aluga.html noutro separador. A noite não pára.
+  O botão de compra dessa página abre rentUrl. Sem esse link, não finge uma venda.
   Se existir CrazyGames.SDK ou PokiSDK, estes links e os 2 € não aparecem. Fica a piada do papel vazio.
   A página de sucesso do Matos volta com #matos-calado. O cartão da noite é o único intervalo.
   O copo nunca é interrompido. A gravação antiga (tasca-do-ze-marosca-v1) não é lida.
 -->
 <script>
-window.TASCA_HOST = window.TASCA_HOST || { supportUrl: "" };
+window.TASCA_HOST = window.TASCA_HOST || { supportUrl: "", rentUrl: "" };
 </script>
 <script>
 const SERIF = "Iowan Old Style, Palatino, Georgia, serif";
 const KEY = "tasca-noite-v1";
+const BOARD_KEY = "tasca-noite-quadro";
+const QUADRO_URL = "https://tcgypsqhisptjxusnsxx.supabase.co";
+const QUADRO_KEY = "sb_publishable_DwEA6aTWEVk6kP3WaRUWbw__lFaFPX0";
 const NIGHT = 90;
 const WORLD = 2920;
 const ARRIVALS = [];
@@ -179,10 +184,31 @@ const PLACES = [
 const PEEL = ["cast/peel-1.png"];
 const PEEL_SAY = [
   "Já pagaste. Bebe com os olhos.",
-  "Devagar. A roupa é que tem pressa.",
+  "Duas peças. Bebe devagar.",
   "Olha. Ainda há um pano.",
   "Agora é pele. O Matos que se lixe.",
 ];
+const OFFER_SAY = [
+  "Ó Zé. Uma coisa fora do livro. Levas?",
+  "A Junta anda fria. Isto, quente. Levas?",
+  "Para a casa rosa, se tu quiseres. Levas?",
+  "A casa é tua. Isto ainda é meu. Levas?",
+];
+const ERRAND_MOUTH = [
+  "O Matos que não saiba disto.",
+  "A Junta conta fitas. E contas.",
+  "Se sobrar, a casa rosa come.",
+  "A casa já é tua. O recado paga na mesma.",
+];
+const ECHO_SAY = {
+  limpa: "Correu. Cala isso.",
+  apanhado: "A porta verde perguntou por ti.",
+  nao: "Ficou na mesma. Eu também.",
+};
+const CHAPTER_SAY = {
+  1: { hilario: "A Junta lembrou-se de ti. A porta está aberta, e fria." },
+  2: { albertina: "A casa rosa puxa, Zé. Quinze, se entrares." },
+};
 
 const IMG = {};
 const canvas = document.getElementById("c");
@@ -613,6 +639,30 @@ const EN = {
   "A casa": "The house",
   "Já pagaste. Bebe com os olhos.": "You already paid. Drink with your eyes.",
   "Devagar. A roupa é que tem pressa.": "Slowly. The clothes are the ones in a hurry.",
+  "Duas peças. Bebe devagar.": "Two pieces. Drink slowly.",
+  "Ó Zé. Uma coisa fora do livro. Levas?": "Zé. Something off the book. You taking it?",
+  "A Junta anda fria. Isto, quente. Levas?": "The council's cold. This is hot. You taking it?",
+  "Para a casa rosa, se tu quiseres. Levas?": "For the pink house, if you want it. You taking it?",
+  "A casa é tua. Isto ainda é meu. Levas?": "The house is yours. This is still mine. You taking it?",
+  "Hoje não.": "Not today.",
+  "Traz.": "Bring it.",
+  "Dezesseis. O Matos não viu.": "Sixteen. Matos didn't see.",
+  "A Jénierre viu. São vinte.": "Jénierre saw. That's twenty.",
+  "A Jénierre viu. São vinte. O que faltou, o Matos apontou.": "Jénierre saw. That's twenty. What was short, Matos wrote down.",
+  "A Jénierre viu. O Matos nem olhou.": "Jénierre saw. Matos didn't even look.",
+  "Hoje não. Ficou na mesma.": "Not today. It stays as it was.",
+  "Correu. Cala isso.": "It went through. Keep that quiet.",
+  "A porta verde perguntou por ti.": "The green door asked after you.",
+  "Ficou na mesma. Eu também.": "It stayed the same. So did I.",
+  "O Matos que não saiba disto.": "Matos doesn't get to know about this.",
+  "A Junta conta fitas. E contas.": "The council counts ribbons. And bills.",
+  "Se sobrar, a casa rosa come.": "If there's any left, the pink house eats it.",
+  "A casa já é tua. O recado paga na mesma.": "The house is already yours. The errand pays all the same.",
+  "A Junta lembrou-se de ti. A porta está aberta, e fria.": "The council remembered you. The door is open, and cold.",
+  "A casa rosa puxa, Zé. Quinze, se entrares.": "The pink house pulls, Zé. Fifteen, if you go in.",
+  "Na casa rosa. O presunto, esse, ficou na feira.": "At the pink house. The ham stayed at the market.",
+  "Na casa rosa. Guarda-me na mesma um tremoço.": "At the pink house. Save me a lupin bean all the same.",
+  "Na casa rosa. Deus vê o copo, e a porta.": "At the pink house. God sees the glass, and the door.",
   "Olha. Ainda há um pano.": "Look. There's still one cloth.",
   "Agora é pele. O Matos que se lixe.": "Skin now. Matos can get fucked.",
   "O livro acabou. Como-te o cu e corto-te os tomates.": "The book's shut. I'll have your arse and cut your balls off.",
@@ -626,6 +676,14 @@ const EN = {
   "Quinze, Zé. O que faltar, o Matos escreve.": "Fifteen, Zé. What you haven't got, Matos writes down.",
   "Na casa rosa gasta-se. No Pica-Pau ainda se pede um copo.": "At the pink house you spend. At the Pica-Pau you still ask for a glass.",
   "O {name} anda na casa rosa, todo lampeiro.": "{name} is at the pink house, playing the swell.",
+  "O quadro": "The board",
+  "Volta.": "Back.",
+  "Fica escrito.": "Write it down.",
+  "Como te tratam no balcão?": "What do they call you at the bar?",
+  "Ainda não há nome na casa.": "The house has no name yet.",
+  "O livro não abre.": "The book won't open.",
+  "Quem fechou a casa.": "Who closed the house.",
+  "Noite {n}": "Night {n}",
 };
 function tr(s) {
   if (s == null || s === "" || LANG !== "en") return s;
@@ -668,7 +726,8 @@ var G = {
   paciencia: 50, taberneiro: 50, holdTasco: false, pantry: {}, pantryNight: {}, buy: "", crackUsed: 0,
   folk: {}, twist: false, clientWins: 0, role: "", perfects: 0, stool: null, haul: null,
   knife: false, snitch: 0, lendUntil: 0, houseNight: 0, stolen: null, robPending: false, knifeSeen: false, peel: 0, cloth: null,
-  marks: 0, shut: false,
+  marks: 0, shut: false, naming: false, nameBuf: "",
+  offerWho: "", offerDoor: "", offered: false,
   bubble: null, toast: "", toastT: 0, floats: [], drops: [], puffs: [], shake: 0, tickS: 0, doorRect: null,
   adRects: { parede: null, rua: null },
 };
@@ -769,9 +828,21 @@ function chatNag() {
   return bag[Math.floor(Math.random() * bag.length)];
 }
 function ambLine(id) {
+  if (G.offerWho === id && ECHO_SAY[G.offerDoor]) return ECHO_SAY[G.offerDoor];
   if (id === "matos") return matosLine();
+  const chapterLine = CHAPTER_SAY[G.chapter] && CHAPTER_SAY[G.chapter][id];
+  if (chapterLine) return chapterLine;
   const bag = STREET_SAY[id];
   return bag ? bag[voice()] : "…";
+}
+function primoLine(id) {
+  if (id === "zeca") return "Na casa rosa. O presunto, esse, ficou na feira.";
+  if (id === "albertina") return "Na casa rosa. Guarda-me na mesma um tremoço.";
+  if (id === "padre") return "Na casa rosa. Deus vê o copo, e a porta.";
+  return "Na casa rosa gasta-se. No Pica-Pau ainda se pede um copo.";
+}
+function errandMouth() {
+  return ERRAND_MOUTH[Math.max(0, Math.min(3, G.chapter))] || ERRAND_MOUTH[0];
 }
 function rgb(a, t, b) {
   const r = a[0] + (b[0] - a[0]) * t;
@@ -943,6 +1014,7 @@ function save() {
       folk: G.folk, twist: !!G.twist, clientWins: G.clientWins || 0,
       knife: !!G.knife, snitch: G.snitch || 0, lendUntil: G.lendUntil || 0, houseNight: G.houseNight || 0,
       marks: G.marks || 0, shut: !!G.shut, titleNote: G.titleNote || "",
+      offerWho: G.offerWho || "", offerDoor: G.offerDoor || "",
     }));
   } catch (e) {}
 }
@@ -972,6 +1044,8 @@ function loadSave() {
     G.marks = Math.max(0, num(d.marks, 0));
     G.shut = !!d.shut;
     if (typeof d.titleNote === "string") G.titleNote = d.titleNote;
+    G.offerWho = (d.offerWho && CAST[d.offerWho]) ? d.offerWho : "";
+    G.offerDoor = (d.offerDoor === "limpa" || d.offerDoor === "apanhado" || d.offerDoor === "nao") ? d.offerDoor : "";
     if (d.folk && typeof d.folk === "object") {
       REGULARS.forEach((id) => {
         if (d.folk[id] === "ze" || d.folk[id] === "primo") G.folk[id] = d.folk[id];
@@ -998,6 +1072,124 @@ function loadSave() {
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     save();
   }
+}
+
+function cleanName(s) {
+  return String(s || "").replace(/\s+/g, " ").trim().slice(0, 16);
+}
+function loadWho() {
+  try {
+    const d = JSON.parse(localStorage.getItem(BOARD_KEY) || "null");
+    if (typeof d === "string") return cleanName(d);
+    return cleanName(d && d.who);
+  } catch (e) {
+    return "";
+  }
+}
+function saveWho(name) {
+  if (window.TASCA_NOSAVE) return;
+  try { localStorage.setItem(BOARD_KEY, JSON.stringify({ who: cleanName(name) })); } catch (e) {}
+}
+function shownBoard() {
+  if (G.sheet && Array.isArray(G.sheet.rows)) return G.sheet;
+  return { who: loadWho(), rows: [] };
+}
+function quadroHeaders() {
+  return {
+    apikey: QUADRO_KEY,
+    Authorization: "Bearer " + QUADRO_KEY,
+    "Content-Type": "application/json",
+  };
+}
+function rowsFrom(data) {
+  const list = Array.isArray(data) ? data : [];
+  return list.map((r) => ({
+    name: cleanName(r && (r.nome || r.name)),
+    nights: Math.max(1, Math.round(num(r && (r.noites != null ? r.noites : r.nights), 1))),
+    wallet: Math.max(0, Math.round(num(r && (r.bolsa != null ? r.bolsa : r.wallet), 0))),
+  })).filter((r) => r.name).slice(0, 10);
+}
+function pullBoard() {
+  const seq = (G.boardSeq = (G.boardSeq || 0) + 1);
+  fetch(QUADRO_URL + "/rest/v1/rpc/le_quadro", {
+    method: "POST",
+    headers: quadroHeaders(),
+    body: "{}",
+  }).then((r) => (r.ok ? r.json() : Promise.reject())).then((data) => {
+    if (G.boardSeq !== seq) return;
+    G.sheet = { who: (G.sheet && G.sheet.who) || loadWho(), rows: rowsFrom(data), fechado: false };
+  }).catch(() => {
+    if (G.boardSeq !== seq) return;
+    const prev = shownBoard();
+    G.sheet = { who: prev.who, rows: prev.rows || [], fechado: true };
+  });
+}
+function pushBoard(name, nights, wallet) {
+  const who = cleanName(name);
+  if (!who) return;
+  const row = {
+    name: who,
+    nights: Math.max(1, Math.round(nights || 1)),
+    wallet: Math.max(0, Math.round(wallet || 0)),
+  };
+  if (!window.TASCA_NOSAVE) saveWho(who);
+  G.sheet = placeRow(shownBoard(), row);
+  G.sheet.who = who;
+  G.sheet.fechado = false;
+  if (window.TASCA_NOSAVE) return;
+  const seq = (G.boardSeq = (G.boardSeq || 0) + 1);
+  fetch(QUADRO_URL + "/rest/v1/rpc/entra_no_quadro", {
+    method: "POST",
+    headers: quadroHeaders(),
+    body: JSON.stringify({ p_nome: who, p_noites: row.nights, p_bolsa: row.wallet }),
+  }).then((r) => (r.ok ? r.json() : Promise.reject())).then((data) => {
+    if (G.boardSeq !== seq) return;
+    G.sheet = { who: who, rows: rowsFrom(data), fechado: false };
+  }).catch(() => {
+    if (G.boardSeq !== seq) return;
+    if (G.sheet) G.sheet.fechado = true;
+  });
+}
+function boardBetter(a, b) {
+  if (a.nights !== b.nights) return a.nights < b.nights;
+  return a.wallet > b.wallet;
+}
+function placeRow(board, row) {
+  const name = cleanName(row && row.name);
+  const next = {
+    name: name,
+    nights: Math.max(1, Math.round((row && row.nights) || 1)),
+    wallet: Math.max(0, Math.round((row && row.wallet) || 0)),
+  };
+  const base = { who: cleanName(board && board.who), rows: ((board && board.rows) || []).slice() };
+  if (!name) return base;
+  const prev = base.rows.find((r) => r.name === name);
+  const keep = prev && !boardBetter(next, prev) ? prev : next;
+  const rows = base.rows.filter((r) => r.name !== name);
+  rows.push(keep);
+  rows.sort((a, b) => a.nights - b.nights || b.wallet - a.wallet || a.name.localeCompare(b.name));
+  return { who: base.who || name, rows: rows.slice(0, 10) };
+}
+function noteWin() {
+  const nights = (G.report && G.report.night) || Math.max(1, G.night - 1);
+  const who = (G.sheet && G.sheet.who) || loadWho();
+  if (who) {
+    pushBoard(who, nights, G.wallet);
+    G.naming = false;
+    G.mode = "quadro";
+    return;
+  }
+  G.naming = true;
+  G.nameBuf = "";
+}
+function commitName() {
+  const name = cleanName(G.nameBuf);
+  G.naming = false;
+  G.nameBuf = "";
+  if (!name) return;
+  const nights = (G.report && G.report.night) || Math.max(1, G.night - 1);
+  pushBoard(name, nights, G.wallet);
+  G.mode = "quadro";
 }
 
 function warm() {
@@ -1153,6 +1345,7 @@ function startNight() {
   G.phase = "idle";
   G.crackUsed = 0;
   G.chatUsed = 0;
+  G.offered = false;
   G.buy = "";
   buildRoster();
   G.x = doorX("tasca") + 40;
@@ -1209,6 +1402,11 @@ function resetGame() {
   G.cloth = null;
   G.marks = 0;
   G.shut = false;
+  G.naming = false;
+  G.nameBuf = "";
+  G.offerWho = "";
+  G.offerDoor = "";
+  G.offered = false;
   G.pantry = {};
   G.pantryNight = {};
   G.buy = "";
@@ -1275,9 +1473,11 @@ function payDebt() {
   G.debt -= n;
   tone(520, 0.12, "triangle", 0.04);
   if (G.debt <= 0 && G.chapter < 3) {
+    const won = G.chapter === 2;
     G.chapter += 1;
     G.debt = CHAPTERS[G.chapter].debt;
     G.banner = CHAPTERS[G.chapter].line;
+    if (won && G.debt <= 0) noteWin();
   } else if (G.debt <= 0) {
     const fresh = G.chapter >= 3 && !G.twist;
     ensureFolk();
@@ -1316,13 +1516,17 @@ function spawn() {
   if (!src) return;
   let good = null;
   let chat = null;
+  let offer = false;
   const pole = voice();
   if (pole !== "mid" && G.guestN >= 1 && G.crackUsed < 2 && (G.crackUsed === 0 || G.guestN >= 7)) {
     good = crackPick();
     if (good) G.crackUsed += 1;
   }
   if (!good && G.guestN >= 2 && G.chatUsed < 3 && G.guestN % 4 === 2) {
-    chat = chatPick();
+    if (!G.offered && src.id !== "cabo") {
+      chat = { say: OFFER_SAY[Math.max(0, Math.min(3, G.chapter))] || OFFER_SAY[0], reply: "" };
+      offer = true;
+    } else chat = chatPick();
     G.chatUsed += 1;
   }
   const base = good ? 16 : (chat ? 12 : (G.guestN === 0 ? 10 : 7.2));
@@ -1332,10 +1536,58 @@ function spawn() {
     id: src.id, name: src.name, say: say, order: say, kind: src.kind,
     band: src.band, liquid: src.liquid, life: life, max: life,
     nag: 0, nagT: chat ? 3.2 : 2.15, nagLine: "", good: good ? good.id : "",
-    chat: !!chat, reply: chat ? chat.reply : "",
+    chat: !!chat, reply: chat ? chat.reply : "", offer: offer,
   };
   G.guestN += 1;
   G.pour = 0;
+  if (!offer && !good && !chat && G.offerWho === src.id && ECHO_SAY[G.offerDoor]) G.guest.say = ECHO_SAY[G.offerDoor];
+}
+function clearOfferGuest() {
+  G.guest = null;
+  G.pour = 0;
+  G.holding = false;
+  G.gap = 0.35;
+  G.offered = true;
+}
+function refuseOffer() {
+  if (!G.guest || !G.guest.offer) return;
+  G.offerWho = G.guest.id;
+  G.offerDoor = "nao";
+  clearOfferGuest();
+  G.toast = "Hoje não. Ficou na mesma.";
+  G.toastT = 2.2;
+  tone(440, 0.08, "triangle", 0.04);
+  save();
+}
+function takeOffer() {
+  if (!G.guest || !G.guest.offer) return;
+  const who = G.guest.id;
+  const forced = window.TASCA_OFFER;
+  const clean = forced === "limpa" ? true : (forced === "apanhado" ? false : Math.random() < 0.5);
+  clearOfferGuest();
+  G.offerWho = who;
+  if (clean) {
+    G.offerDoor = "limpa";
+    G.copos += 16;
+    G.toast = "Dezesseis. O Matos não viu.";
+    G.toastT = 2.2;
+    G.floats.push({ x: 480, y: 180, text: "+16 €", t: 1.1, big: true });
+    chime();
+    save();
+    return;
+  }
+  G.offerDoor = "apanhado";
+  const res = charge(20, { keep: true });
+  if (res.colhe) {
+    save();
+    matosVem();
+    return;
+  }
+  G.toast = !res.ok ? "A Jénierre viu. O Matos nem olhou."
+    : (res.borrowed > 0 ? "A Jénierre viu. São vinte. O que faltou, o Matos apontou." : "A Jénierre viu. São vinte.");
+  G.toastT = 2.8;
+  tone(110, 0.16, "square", 0.05);
+  save();
 }
 function hearChat() {
   if (!G.guest || !G.guest.chat) return;
@@ -1353,6 +1605,7 @@ function hearChat() {
   tone(440, 0.08, "triangle", 0.04);
 }
 function fleeGuest() {
+  if (G.guest && G.guest.offer) G.offered = true;
   if (G.guest && G.guest.good) crackFail(G.guest.good);
   else if (G.guest && G.guest.chat) {
     bump("paciencia", -2);
@@ -1510,7 +1763,7 @@ function souls() {
   });
   withPrimo().forEach((id, i) => {
     if (G.haul && G.haul.took && G.haul.who === id) return;
-    list.push({ id: id, x: doorX("disco") + 130 + i * 110, kind: "amb", line: "Na casa rosa gasta-se. No Pica-Pau ainda se pede um copo." });
+    list.push({ id: id, x: doorX("disco") + 130 + i * 110, kind: "amb", line: primoLine(id) });
   });
   return list;
 }
@@ -1528,6 +1781,8 @@ function talk(s) {
     G.phase = "carry";
     G.robPending = true;
     say(s.id, s.line);
+    G.toast = errandMouth();
+    G.toastT = 2.6;
     tone(440, 0.08, "triangle", 0.04);
     return;
   }
@@ -1882,8 +2137,12 @@ function targetPlace() {
 function ui() {
   if (G.mode === "bar") {
     const o = {};
-    if (G.guest && G.guest.chat) o.chat = { x: 370, y: 398, w: 300, h: 38, label: "Dar à língua", act: "chat", hot: true };
-    else if (G.guest && G.guest.good && GOODS[G.guest.good]) {
+  if (G.guest && G.guest.chat) {
+    if (G.guest.offer) {
+      o.no = { x: 48, y: 398, w: 250, h: 38, label: "Hoje não.", act: "offerNo", hot: false };
+      o.yes = { x: 360, y: 398, w: 330, h: 38, label: "Traz.", act: "offerYes", hot: true };
+    } else o.chat = { x: 370, y: 398, w: 300, h: 38, label: "Dar à língua", act: "chat", hot: true };
+  } else if (G.guest && G.guest.good && GOODS[G.guest.good]) {
       const g = GOODS[G.guest.good];
       if (isSour(g.id)) {
         o.serve = { x: 360, y: 398, w: 340, h: 38, label: "Serve o queijo podre", act: "serve", hot: true };
@@ -1928,9 +2187,16 @@ function ui() {
       zero: G.seen ? { x: 536, y: 372, w: 348, h: 40, label: G.arm ? "Mesmo? Ficas sem casa." : "Deitar abaixo", act: "zero", hot: false } : null,
       pt: { x: 548, y: 448, w: 130, h: 22, label: "Português", act: "lang", lang: "pt", text: true },
       en: { x: 690, y: 448, w: 110, h: 22, label: "English", act: "lang", lang: "en", text: true },
+      quadro: { x: 536, y: 418, w: 348, h: 24, label: "O quadro", act: "quadro", hot: false, text: true },
     };
   }
+  if (G.mode === "quadro") {
+    return { back: { x: 280, y: 456, w: 400, h: 44, label: "Volta.", act: "title", hot: true } };
+  }
   if (G.mode === "card") {
+    if (G.naming) {
+      return { write: { x: 280, y: 430, w: 400, h: 48, label: "Fica escrito.", act: "name", hot: true } };
+    }
     const offer = !G.matosPago && !G.nextQuiet;
     return {
       pay: (G.wallet > 0 && G.debt > 0) ? { x: 188, y: 400, w: 250, h: 46, label: "Pagar ao Matos", act: "pay", hot: false } : null,
@@ -1946,6 +2212,8 @@ function doAct(act, r) {
   if (act === "snap") { snapGuest(); return; }
   if (act === "serve") { serveGood(); return; }
   if (act === "chat") { hearChat(); return; }
+  if (act === "offerNo") { refuseOffer(); return; }
+  if (act === "offerYes") { takeOffer(); return; }
   if (act === "goFresh") { G.buy = "queijo"; enterStreet(); return; }
   if (act === "goBuy") {
     if (G.guest && G.guest.good) G.buy = G.guest.good;
@@ -1974,6 +2242,9 @@ function doAct(act, r) {
     return;
   }
   if (act === "pay") { payDebt(); return; }
+  if (act === "quadro") { G.mode = "quadro"; pullBoard(); return; }
+  if (act === "title") { G.naming = false; G.mode = "title"; return; }
+  if (act === "name") { commitName(); return; }
   if (act === "buy") { buyMatos(); return; }
   if (act === "reward") { askQuiet(); return; }
   if (act === "copy") { copyResult(); return; }
@@ -2033,7 +2304,7 @@ canvas.addEventListener("pointerdown", (e) => {
   if (G.adLock || G.mode === "boot") return;
   try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
   const p = pos(e);
-  if (G.mode === "title" || G.mode === "card") {
+  if (G.mode === "title" || G.mode === "card" || G.mode === "quadro") {
     if (clickUI(p)) return;
     if (G.mode === "title" && hit(G.adRects.parede, p)) openAd("parede");
     return;
@@ -2064,7 +2335,22 @@ canvas.addEventListener("pointerdown", (e) => {
 canvas.addEventListener("pointerup", () => releasePour());
 canvas.addEventListener("pointercancel", () => releasePour());
 addEventListener("keydown", (e) => {
-  if (G.adLock || e.repeat) return;
+  if (G.adLock) return;
+  if (G.naming) {
+    if (e.key === "Enter") { e.preventDefault(); commitName(); return; }
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      G.nameBuf = (G.nameBuf || "").slice(0, -1);
+      return;
+    }
+    if (e.key === "Escape") { G.naming = false; G.nameBuf = ""; return; }
+    if (!e.repeat && e.key && e.key.length === 1 && !e.metaKey && !e.ctrlKey && (G.nameBuf || "").length < 16) {
+      if (!(e.key === " " && !G.nameBuf)) G.nameBuf += e.key;
+      e.preventDefault();
+    }
+    return;
+  }
+  if (e.repeat) return;
   const k = e.key.toLowerCase();
   if (k === " " || e.code === "Space") {
     e.preventDefault();
@@ -2090,6 +2376,7 @@ addEventListener("keydown", (e) => {
     else interact();
   }
   if (k === "f") snapGuest();
+  if (k === "enter" && G.mode === "quadro") doAct("title");
   if (k === "enter" && (G.mode === "title" || G.mode === "card")) doAct("go");
 });
 addEventListener("keyup", (e) => {
@@ -2382,12 +2669,17 @@ function loadAdImages() {
 }
 function openAd(id) {
   const href = safeHref(adSlot(id) && adSlot(id).href);
-  if (!href) {
+  if (href) {
+    window.open(href, "_blank", "noopener,noreferrer");
+    return;
+  }
+  if (portalHouse()) {
     G.toast = "Este papel ainda não está vendido.";
     G.toastT = 1.5;
     return;
   }
-  window.open(href, "_blank", "noopener,noreferrer");
+  const page = safeHref("aluga.html" + (LANG === "en" ? "?lang=en" : ""));
+  if (page) window.open(page, "_blank", "noopener,noreferrer");
 }
 function drawHung(x, y, w, h, id) {
   loadAdImages();
@@ -3246,9 +3538,40 @@ function drawCard() {
   else if (G.matosPago) extra = tr("O Matos ficou calado.");
   else if (G.nextQuiet) extra = tr("A próxima noite o Matos fica calado.");
   if (G.banner) extra = tr(G.banner);
+  if (G.naming) {
+    label(tr("Como te tratam no balcão?"), 480, 348, "18px " + SERIF, "#f6efe2", "center");
+    label((G.nameBuf || "") + "▌", 480, 384, "28px " + SERIF, "#e4c27a", "center");
+    extra = "";
+  }
   if (extra) {
     ctx.font = "16px " + SERIF;
     wrap(extra, 560).slice(0, 2).forEach((ln, i) => label(ln, 480, 368 + i * 18, "16px " + SERIF, "#e4c27a", "center"));
+  }
+  buttons();
+}
+function drawQuadro() {
+  drawBar();
+  ctx.fillStyle = "rgba(8,6,6,0.72)";
+  ctx.fillRect(0, 0, 960, 540);
+  ctx.fillStyle = "#140e0c";
+  ctx.strokeStyle = "#e4c27a";
+  ctx.lineWidth = 2;
+  roundRect(180, 28, 600, 484, 16);
+  ctx.fill();
+  ctx.stroke();
+  label(tr("Quem fechou a casa."), 480, 72, "22px " + SERIF, "#e4c27a", "center");
+  const rows = shownBoard().rows;
+  if (!rows.length) {
+    label(tr(G.sheet && G.sheet.fechado ? "O livro não abre." : "Ainda não há nome na casa."), 480, 260, "18px " + SERIF, "#f6efe2", "center");
+  } else {
+    if (G.sheet && G.sheet.fechado) label(tr("O livro não abre."), 480, 98, "15px " + SERIF, "#e07060", "center");
+    rows.forEach((r, i) => {
+      const y = 118 + i * 32;
+      label(String(i + 1), 230, y, "18px " + SERIF, "#c4a574", "left");
+      label(r.name, 270, y, "18px " + SERIF, "#f6efe2", "left");
+      label(tf("Noite {n}", { n: r.nights }), 560, y, "16px " + SERIF, "#e4c27a", "right");
+      label(r.wallet + " €", 730, y, "18px " + SERIF, "#f6efe2", "right");
+    });
   }
   buttons();
 }
@@ -3378,22 +3701,26 @@ function drawStrip(x, foot, stage) {
     ctx.fill();
   }
   if (stage === 1 || stage === 2) {
-    ctx.fillStyle = "#140e12";
+    ctx.fillStyle = stage === 1 ? "#6e2430" : "#140e12";
     ctx.beginPath();
-    ctx.moveTo(x + hip - 24, y(208));
-    ctx.lineTo(x + hip + 24, y(208));
-    ctx.lineTo(x + hip + 14, y(246));
-    ctx.quadraticCurveTo(x + hip, y(232), x + hip - 14, y(246));
+    ctx.moveTo(x + hip - 32, y(196));
+    ctx.lineTo(x + hip + 32, y(196));
+    ctx.lineTo(x + hip + 20, y(252));
+    ctx.quadraticCurveTo(x + hip, y(228), x + hip - 20, y(252));
+    ctx.closePath();
     ctx.fill();
+    ctx.fillRect(x + hip - 32, y(188), 64, 10);
   }
   if (stage === 1) {
-    ctx.fillStyle = "#140e12";
+    ctx.fillStyle = "#6e2430";
     [-1, 1].forEach((s) => {
       ctx.beginPath();
-      ctx.ellipse(x + sh + s * 13, y(128), 13, 9, s * 0.25, 0, 7);
+      ctx.ellipse(x + sh + s * 18, y(122), 20, 15, s * 0.15, 0, 7);
       ctx.fill();
     });
-    ctx.fillRect(x + sh - 24, y(116), 48, 4);
+    ctx.fillRect(x + sh - 20, y(108), 40, 7);
+    ctx.fillRect(x + sh - 40, y(114), 14, 5);
+    ctx.fillRect(x + sh + 26, y(114), 14, 5);
   }
   ctx.fillStyle = "#1a1210";
   [-1, 1].forEach((s) => ctx.fillRect(x + s * 11 - 9, y(408), 18, 8));
@@ -3474,6 +3801,7 @@ function render() {
   ctx.clearRect(-20, -20, 1000, 580);
   if (G.mode === "boot") drawBoot();
   else if (G.mode === "title") drawTitle();
+  else if (G.mode === "quadro") drawQuadro();
   else if (G.mode === "card") drawCard();
   else if (G.mode === "street") { drawStreet(); vignette(); drawHud(); drawHaulGlass(); drawMeters(); drawToast(); drawFloats(); buttons(); }
   else if (G.mode === "stool") { drawStool(); vignette(); drawHud(); drawToast(); drawFloats(); buttons(); }

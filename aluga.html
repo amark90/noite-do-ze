@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aluga-se — A Noite do Zé</title>
+<style>
+  html, body { margin: 0; background: #100c0a; color: #f6efe2; }
+  body { font: 18px "Iowan Old Style", Palatino, Georgia, serif; }
+  main { max-width: 38rem; margin: 0 auto; padding: 2.5rem 1.4rem 4rem; }
+  h1 { font-weight: normal; font-size: 2rem; color: #e4c27a; margin: 0 0 0.6rem; }
+  h2 { font-weight: normal; font-size: 1.25rem; color: #e4c27a; margin: 1.6rem 0 0.3rem; }
+  p { line-height: 1.45; }
+  a { color: #e4c27a; }
+  button {
+    font: inherit; color: #241812; background: #e4c27a;
+    border: 0; border-radius: 10px; padding: 0.7rem 1.2rem; cursor: pointer;
+  }
+  button[disabled] { background: #3a2a22; color: #c4a574; cursor: default; }
+  .wait { color: #c4a574; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">Aluga-se</h1>
+  <p id="lead">Dois papéis. A parede do balcão, e o placard da rua.</p>
+  <h2 id="wall">A parede</h2>
+  <p id="wallp">Por baixo do quadro, longe do copo. Cabe uma imagem, um link e um nome de vinte e quatro letras.</p>
+  <h2 id="street">A rua</h2>
+  <p id="streetp">No passeio, em frente à garagem, fora das portas. A mesma coisa: imagem, link, nome.</p>
+  <p id="hand">O que entregas é isso. Imagem, um link http ou https, e o nome.</p>
+  <p><button id="buy" type="button"></button></p>
+  <p id="note" class="wait"></p>
+  <p><a id="back" href="./">Volta à noite.</a></p>
+</main>
+<script>
+window.TASCA_HOST = window.TASCA_HOST || { supportUrl: "", rentUrl: "" };
+(function () {
+  var en = /(?:^|[?&])lang=en(?:&|$)/.test(location.search);
+  var copy = en ? {
+    title: "To let",
+    lead: "Two papers. The wall behind the bar, and the board on the street.",
+    wall: "The wall",
+    wallp: "Under the picture, away from the glass. An image, a link, and a name of twenty-four letters.",
+    street: "The street",
+    streetp: "On the pavement, in front of the garage, clear of the doors. The same: image, link, name.",
+    hand: "What you hand over is that. An image, an http or https link, and the name.",
+    buy: "I'll take the paper.",
+    wait: "The paper is waiting for the link.",
+    after: "Once it's paid, the paper goes up by hand. This page does not change the poster on its own.",
+    back: "Back to the night."
+  } : {
+    title: "Aluga-se",
+    lead: "Dois papéis. A parede do balcão, e o placard da rua.",
+    wall: "A parede",
+    wallp: "Por baixo do quadro, longe do copo. Cabe uma imagem, um link e um nome de vinte e quatro letras.",
+    street: "A rua",
+    streetp: "No passeio, em frente à garagem, fora das portas. A mesma coisa: imagem, link, nome.",
+    hand: "O que entregas é isso. Imagem, um link http ou https, e o nome.",
+    buy: "Fico com o papel.",
+    wait: "O papel espera o link.",
+    after: "Pago, o papel entra à mão. Esta página não troca o cartaz sozinha.",
+    back: "Volta à noite."
+  };
+  document.documentElement.lang = en ? "en" : "pt";
+  document.title = copy.title + " — A Noite do Zé";
+  ["title", "lead", "wall", "wallp", "street", "streetp", "hand"].forEach(function (id) {
+    document.getElementById(id).textContent = copy[id];
+  });
+  document.getElementById("back").textContent = copy.back;
+  var raw = String((window.TASCA_HOST && window.TASCA_HOST.rentUrl) || "").trim();
+  var href = "";
+  if (raw) {
+    try {
+      var u = new URL(raw);
+      if (u.protocol === "http:" || u.protocol === "https:") href = u.href;
+    } catch (e) {}
+  }
+  var buy = document.getElementById("buy");
+  var note = document.getElementById("note");
+  if (!href) {
+    buy.disabled = true;
+    buy.textContent = copy.wait;
+    note.textContent = copy.after;
+    return;
+  }
+  buy.disabled = false;
+  buy.textContent = copy.buy;
+  note.textContent = copy.after;
+  buy.addEventListener("click", function () {
+    window.open(href, "_blank", "noopener,noreferrer");
+  });
+})();
+</script>
+</body>
+</html>

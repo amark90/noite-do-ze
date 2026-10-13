@@ -10,6 +10,6 @@ Abre `index.html`, ou serve a pasta:
 python3 -m http.server 3000
 ```
 
-Depois entra em [http://localhost:3000](http://localhost:3000).
+Depois entra em [http://localhost:3000](http://localhost:3000). A noite publicada está em [https://amark90.github.io/noite-do-ze/](https://amark90.github.io/noite-do-ze/). O papel vazio abre `aluga.html`.
 
 Segura para encher o copo e solta na faixa verde. O que a noite não paga, o Matos escreve. O stock comprado cedo apodrece de manhã. O livro tem um tecto: passá-lo duas vezes fecha a tasca.
