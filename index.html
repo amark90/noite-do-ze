@@ -53,7 +53,7 @@ const CHAPTERS = [
 
 const CAST = {
   ze: { name: "Zé", src: "cast/ze.png" },
-  albertina: { name: "Albertina", src: "cast/albertina.png" },
+  albertina: { name: "Albertina", src: "cast/albertina.png?v=casa" },
   antonio: { name: "António", src: "cast/antonio.png" },
   zeca: { name: "Zeca", src: "cast/zeca.png" },
   zequinha: { name: "Zequinha", src: "cast/zequinha.png" },
@@ -185,8 +185,8 @@ const PEEL = ["cast/peel-1.png"];
 const PEEL_SAY = [
   "Já pagaste. Bebe com os olhos.",
   "Duas peças. Bebe devagar.",
-  "Olha. Ainda há um pano.",
-  "Agora é pele. O Matos que se lixe.",
+  "O pano fica. Bebe devagar.",
+  "O pano fica. Bebe devagar.",
 ];
 const OFFER_SAY = [
   "Ó Zé. Uma coisa fora do livro. Levas?",
@@ -640,6 +640,7 @@ const EN = {
   "Já pagaste. Bebe com os olhos.": "You already paid. Drink with your eyes.",
   "Devagar. A roupa é que tem pressa.": "Slowly. The clothes are the ones in a hurry.",
   "Duas peças. Bebe devagar.": "Two pieces. Drink slowly.",
+  "O pano fica. Bebe devagar.": "The cloth stays. Drink slowly.",
   "Ó Zé. Uma coisa fora do livro. Levas?": "Zé. Something off the book. You taking it?",
   "A Junta anda fria. Isto, quente. Levas?": "The council's cold. This is hot. You taking it?",
   "Para a casa rosa, se tu quiseres. Levas?": "For the pink house, if you want it. You taking it?",
@@ -3630,107 +3631,10 @@ function drawHall() {
 }
 function drawStrip(x, foot, stage) {
   const H = 430;
-  const top = foot - H;
-  if (stage <= 0) {
-    blit(IMG.peel0, x, foot, H);
-    return;
-  }
-  const sway = Math.sin((G.hallT || 0) * 1.6);
-  const hip = sway * 8;
-  const sh = -sway * 3;
-  const y = (t) => top + t;
-  ctx.save();
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  const limb = (x0, y0, x1, y1, x2, y2, w, col) => {
-    ctx.strokeStyle = col;
-    ctx.lineWidth = w;
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.quadraticCurveTo(x1, y1, x2, y2);
-    ctx.stroke();
-  };
-  limb(x + hip - 14, y(236), x + hip - 16, y(320), x - 10, y(408), 18, "#a86a48");
-  limb(x + hip + 14, y(236), x + hip + 18, y(320), x + 12, y(408), 18, "#c88862");
-  limb(x + hip - 16, y(214), x + hip - 18, y(250), x + hip - 14, y(250), 24, "#a86a48");
-  limb(x + hip + 16, y(214), x + hip + 20, y(250), x + hip + 14, y(250), 24, "#c88862");
-  ctx.fillStyle = "#c88862";
-  ctx.beginPath();
-  ctx.moveTo(x + sh - 12, y(76));
-  ctx.quadraticCurveTo(x + sh - 46, y(108), x + sh - 34, y(150));
-  ctx.quadraticCurveTo(x + hip - 26, y(188), x + hip - 38, y(228));
-  ctx.lineTo(x + hip + 38, y(228));
-  ctx.quadraticCurveTo(x + hip + 28, y(188), x + sh + 34, y(150));
-  ctx.quadraticCurveTo(x + sh + 48, y(108), x + sh + 14, y(76));
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = "rgba(90,40,24,0.35)";
-  ctx.beginPath();
-  ctx.moveTo(x + sh - 12, y(76));
-  ctx.quadraticCurveTo(x + sh - 46, y(108), x + sh - 34, y(150));
-  ctx.quadraticCurveTo(x + hip - 26, y(188), x + hip - 10, y(228));
-  ctx.lineTo(x + sh, y(228));
-  ctx.lineTo(x + sh, y(76));
-  ctx.fill();
-  limb(x + sh - 40, y(112), x + sh - 58, y(170), x + hip - 48, y(228), 13, "#a86a48");
-  limb(x + sh + 40, y(112), x + sh + 58, y(170), x + hip + 48, y(228), 13, "#c88862");
-  ctx.fillStyle = "#e0b090";
-  [-1, 1].forEach((s) => {
-    ctx.beginPath();
-    ctx.arc(x + hip + s * 48, y(234), 7, 0, 7);
-    ctx.fill();
-  });
-  if (stage >= 2) {
-    [-1, 1].forEach((s) => {
-      ctx.fillStyle = "#e4b898";
-      ctx.beginPath();
-      ctx.ellipse(x + sh + s * 13, y(132), 12, 11, 0, 0, 7);
-      ctx.fill();
-      ctx.fillStyle = "#8a4038";
-      ctx.beginPath();
-      ctx.arc(x + sh + s * 13, y(134), 2.6, 0, 7);
-      ctx.fill();
-    });
-  }
-  if (stage >= 3) {
-    ctx.fillStyle = "#3a2018";
-    ctx.beginPath();
-    ctx.moveTo(x + hip - 9, y(220));
-    ctx.lineTo(x + hip + 9, y(220));
-    ctx.lineTo(x + hip, y(242));
-    ctx.fill();
-  }
-  if (stage === 1 || stage === 2) {
-    ctx.fillStyle = stage === 1 ? "#6e2430" : "#140e12";
-    ctx.beginPath();
-    ctx.moveTo(x + hip - 32, y(196));
-    ctx.lineTo(x + hip + 32, y(196));
-    ctx.lineTo(x + hip + 20, y(252));
-    ctx.quadraticCurveTo(x + hip, y(228), x + hip - 20, y(252));
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillRect(x + hip - 32, y(188), 64, 10);
-  }
-  if (stage === 1) {
-    ctx.fillStyle = "#6e2430";
-    [-1, 1].forEach((s) => {
-      ctx.beginPath();
-      ctx.ellipse(x + sh + s * 18, y(122), 20, 15, s * 0.15, 0, 7);
-      ctx.fill();
-    });
-    ctx.fillRect(x + sh - 20, y(108), 40, 7);
-    ctx.fillRect(x + sh - 40, y(114), 14, 5);
-    ctx.fillRect(x + sh + 26, y(114), 14, 5);
-  }
-  ctx.fillStyle = "#1a1210";
-  [-1, 1].forEach((s) => ctx.fillRect(x + s * 11 - 9, y(408), 18, 8));
-  ctx.restore();
-  const img = IMG.peelHead;
-  if (img) {
-    const hh = H * (img.height / 1250);
-    blit(img, x + sh * 0.25, top + hh, hh);
-  }
+  const img = IMG.peelViva || IMG.peel0;
+  if (img) blit(img, x, foot, H);
 }
+
 function drawStool() {
   drawHall();
   const paid = G.houseNight === G.night;
@@ -3853,6 +3757,7 @@ function boot() {
   Object.keys(PROP).forEach((id) => files.push([id, PROP[id]]));
   PEEL.forEach((src, i) => files.push(["peel" + i, src]));
   files.push(["peelHead", "cast/peel-head.png"]);
+  files.push(["peelViva", "cast/peel-viva.png?v=casa"]);
   let left = files.length;
   const tick = () => {
     left -= 1;
