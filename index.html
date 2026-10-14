@@ -589,6 +589,11 @@ const EN = {
   "O {name} ainda anda lá, todo lampeiro.": "{name} is still there, playing the swell.",
   "Ficou {n} cliente à porta, e tu na rua.": "{n} customer was left at the door, and you were out.",
   "Ficaram {n} à porta, e tu na rua.": "{n} were left at the door, and you were out.",
+  "Foi-se {n}. Nem um copo.": "{n} walked off. Not even a glass.",
+  "Foram-se {n}. Nem um copo.": "{n} walked off. Not even a glass.",
+  "Leva-o.": "Take him.",
+  "{name} bebe. Leva-o antes que o copo assente.": "{name} is drinking. Take him before the glass settles.",
+  "A rua": "The street",
   "O queijo azedou. Ainda se serve. Quem o comer que se agarre.": "The cheese turned. You can still serve it. Whoever eats it, hold on.",
   "Entornaste. Até o chão bebeu.": "You spilled. Even the floor drank.",
   "Hoje não levo nada. A dívida fica a dormir contigo.": "Today I take nothing. The debt sleeps with you.",
@@ -726,7 +731,7 @@ var G = {
   servedOnce: false, phase: "idle", roster: [], x: 220, cam: 0, camTo: 0, dest: null, face: 1, step: 0, stride: 0, stamp: -1,
   paciencia: 50, taberneiro: 50, holdTasco: false, pantry: {}, pantryNight: {}, buy: "", crackUsed: 0,
   folk: {}, twist: false, clientWins: 0, role: "", perfects: 0, stool: null, haul: null,
-  knife: false, snitch: 0, lendUntil: 0, houseNight: 0, stolen: null, robPending: false, knifeSeen: false, peel: 0, cloth: null,
+  knife: false, snitch: 0, lendUntil: 0, houseNight: 0, stolen: null, robPending: false, knifeSeen: false, robber: null, robHold: 0, fineT: 0, fineMsg: "", peel: 0, cloth: null,
   marks: 0, shut: false, naming: false, nameBuf: "",
   offerWho: "", offerDoor: "", offered: false,
   bubble: null, toast: "", toastT: 0, floats: [], drops: [], puffs: [], shake: 0, tickS: 0, doorRect: null,
@@ -1327,6 +1332,10 @@ function startNight() {
   G.stolen = null;
   G.robPending = false;
   G.knifeSeen = false;
+  G.robber = null;
+  G.robHold = 0;
+  G.fineT = 0;
+  G.fineMsg = "";
   G.peel = 0;
   G.cloth = null;
   ensureFolk();
@@ -1399,6 +1408,10 @@ function resetGame() {
   G.lendUntil = 0;
   G.houseNight = 0;
   G.stolen = null;
+  G.robber = null;
+  G.robHold = 0;
+  G.fineT = 0;
+  G.fineMsg = "";
   G.peel = 0;
   G.cloth = null;
   G.marks = 0;
@@ -1688,7 +1701,7 @@ function updateShift(dt) {
         if (G.guest.nagT <= 0) {
           G.guest.nag += 1;
           G.guest.nagT = 1.45;
-          G.guest.nagLine = G.guest.chat ? chatNag() : nagLine();
+          G.guest.nagLine = G.guest.good && GOODS[G.guest.good] ? GOODS[G.guest.good].ask : (G.guest.chat ? chatNag() : nagLine());
           bump("paciencia", G.guest.chat ? -1 : -3);
           bump("taberneiro", G.guest.chat ? 1 : 2);
         }
@@ -1724,7 +1737,7 @@ function updateShift(dt) {
 }
 
 function snapGuest() {
-  if (G.mode !== "bar" || !G.guest || G.guest.nag < 2) return;
+  if (G.mode !== "bar" || !G.guest || G.guest.nag < 3 || G.paciencia > 18) return;
   bump("paciencia", -18);
   bump("taberneiro", 16);
   G.guest = null;
@@ -1771,12 +1784,17 @@ function souls() {
 function say(id, text) { G.bubble = { id, text, t: 3.4 }; }
 function talk(s) {
   if (s.id === "cabo") {
+    const delivering = s.kind === "recv" && G.phase === "carry";
     if (G.knife) {
       knifeFine();
-      say("cabo", "O cabo da faca viu-se. Ficas sem ela, e sem os vinte.");
+      if (!delivering) {
+        say("cabo", "O cabo da faca viu-se. Ficas sem ela, e sem os vinte.");
+        return;
+      }
+    } else if (G.stolen && !delivering) {
+      fileComplaint();
       return;
     }
-    if (G.stolen) { fileComplaint(); return; }
   }
   if (s.kind === "giver" && G.phase === "knock") {
     G.phase = "carry";
@@ -1875,17 +1893,20 @@ function placeCamera(instant) {
   if (instant) G.cam = G.camTo;
 }
 function updateStreet(dt) {
-  if (G.phase === "carry" && G.robPending && Math.abs(G.x - doorX("tasca")) > 280) {
+  if (G.robber && G.robber.t > 0) G.robber.t -= dt;
+  if (G.robHold > 0) G.robHold -= dt;
+  if (G.phase === "carry" && G.robPending && !(G.robHold > 0) && Math.abs(G.x - doorX("tasca")) > 820) {
     G.robPending = false;
-    if (Math.random() < 0.34) streetRob();
+    streetRob();
   }
   if (G.knife && !G.knifeSeen && Math.abs(G.x - doorX("jenierre")) < 96) {
     G.knifeSeen = true;
-    if (Math.random() < 0.5) knifeFine();
+    knifeFine();
   }
   let dir = 0;
   if (held.has("a") || held.has("arrowleft")) dir -= 1;
   if (held.has("d") || held.has("arrowright")) dir += 1;
+  if (G.robHold > 0) { dir = 0; G.dest = null; }
   const moving = !!(dir || G.dest != null);
   if (moving) G.stride = Math.min(1, G.stride + dt * 3.4);
   else G.stride = Math.max(0, G.stride - dt * 6);
@@ -1925,6 +1946,7 @@ function enterDisco() {
     G.mode = "stool";
     G.holding = false;
     G.pour = 0;
+    armHaul();
     G.toast = "Esta noite já pagaste. A casa conhece a tua cara.";
     G.toastT = 2.2;
     return;
@@ -1943,6 +1965,7 @@ function enterDisco() {
   G.mode = "stool";
   G.holding = false;
   G.pour = 0;
+  armHaul();
   G.toast = res.borrowed > 0 ? tf("Faltavam {n} €. O Matos apontou, a sorrir.", { n: res.borrowed }) : "Quinze euros. A casa rosa ficou com eles.";
   G.toastT = 2.6;
   save();
@@ -1964,7 +1987,9 @@ function knifeFine() {
   }
   G.toast = !res.ok ? "O cabo ficou com a faca. Desta, o Matos nem olhou."
     : (res.borrowed > 0 ? "O cabo ficou com a faca e o Matos apontou o resto." : "O cabo ficou com a faca. São vinte euros.");
-  G.toastT = 2.8;
+  G.toastT = 4.2;
+  G.fineMsg = G.toast;
+  G.fineT = 4.8;
   save();
 }
 function buyKnife() {
@@ -1988,10 +2013,16 @@ function matosVem() {
   if (G.mode !== "bar" && G.mode !== "street") G.mode = "street";
   endNight({ colhe: true });
 }
+function showRobber(line) {
+  G.robber = { id: "antonio", line: line, t: 3.8 };
+  G.robHold = 1.15;
+  G.dest = null;
+  G.toast = line;
+  G.toastT = 4.4;
+}
 function streetRob() {
   if (G.knife) {
-    G.toast = "A faca viu-o primeiro. Ficaste com o que levavas.";
-    G.toastT = 2.4;
+    showRobber("A faca viu-o primeiro. Ficaste com o que levavas.");
     return;
   }
   if (Math.random() < 0.5 && (G.wallet + G.copos) > 0) {
@@ -1999,13 +2030,19 @@ function streetRob() {
     if (n > 0) G.wallet -= n;
     else { n = Math.min(12, G.copos); G.copos -= n; }
     G.stolen = { kind: "money", n: n };
-    G.toast = tf("A rua levou {n} €. A porta verde ouve queixas.", { n: n });
-  } else {
-    G.phase = "idle";
-    G.stolen = { kind: "parcel" };
-    G.toast = "Levaram o recado. Sem isso, a volta não paga.";
+    showRobber(tf("A rua levou {n} €. A porta verde ouve queixas.", { n: n }));
+    return;
   }
-  G.toastT = 2.8;
+  G.phase = "idle";
+  G.stolen = { kind: "parcel" };
+  showRobber("Levaram o recado. Sem isso, a volta não paga.");
+}
+function armHaul() {
+  if (G.haul && !G.haul.landed) return;
+  if ((G.chapter || 0) < 3) return;
+  const bag = withPrimo();
+  if (!bag.length || !CAST[bag[0]]) return;
+  G.haul = { who: bag[0], band: 0.72, pour: 0.12, rate: 0.03, took: false, landed: false };
 }
 function fileComplaint() {
   if (G.snitch < 2 && G.stolen) {
@@ -2095,13 +2132,16 @@ function winHaul() {
 
 function objective() {
   const e = errand();
-  if (G.mode === "stool") return G.houseNight === G.night ? "Esta noite a casa rosa já te viu." : "A casa rosa. Quinze, se os tiveres.";
+  if (G.mode === "stool") {
+    if (G.haul && !G.haul.took && !G.haul.landed) return tf("{name} bebe. Leva-o antes que o copo assente.", { name: CAST[G.haul.who].name });
+    return G.houseNight === G.night ? "Esta noite a casa rosa já te viu." : "A casa rosa. Quinze, se os tiveres.";
+  }
   if (G.buy && GOODS[G.buy]) {
     const g = GOODS[G.buy];
     if (G.mode === "street") return tf("Na feira está o {name}, a {cost} €. Amanhã já não presta.", { name: food(g), cost: g.cost });
     return tf("Não há {name}. A feira é que o tem.", { name: food(g) });
   }
-  if (G.mode === "bar" && G.guest && !G.guest.good && !G.guest.chat && !G.guest.stool) {
+  if (G.mode === "bar" && G.guest && !G.guest.good && !G.guest.chat && !G.guest.stool && G.phase !== "knock" && G.phase !== "carry" && G.phase !== "drop") {
     if (!G.servedOnce) return "A mão é que sabe. O verde paga.";
     return "Enche, Zé. A noite não se serve sozinha.";
   }
@@ -2178,17 +2218,18 @@ function ui() {
     }
   }
   if (G.mode === "stool") {
-    return {
-      leave: { x: 250, y: 446, w: 460, h: 48, label: "Chega.", act: "leave", hot: true },
-    };
+    const o = { leave: { x: 560, y: 446, w: 360, h: 48, label: "Chega.", act: "leave", hot: true } };
+    if (G.haul && !G.haul.took && !G.haul.landed) o.take = { x: 560, y: 390, w: 360, h: 42, label: "Leva-o.", act: "take", hot: true };
+    return o;
   }
   if (G.mode === "title") {
+    const note = !!G.titleNote;
     return {
-      go: { x: 536, y: 300, w: 348, h: 52, label: "Abre a noite", act: "go", hot: true },
-      zero: G.seen ? { x: 536, y: 372, w: 348, h: 40, label: G.arm ? "Mesmo? Ficas sem casa." : "Deitar abaixo", act: "zero", hot: false } : null,
-      pt: { x: 548, y: 448, w: 130, h: 22, label: "Português", act: "lang", lang: "pt", text: true },
-      en: { x: 690, y: 448, w: 110, h: 22, label: "English", act: "lang", lang: "en", text: true },
-      quadro: { x: 536, y: 418, w: 348, h: 24, label: "O quadro", act: "quadro", hot: false, text: true },
+      go: { x: 536, y: note ? 328 : 300, w: 348, h: 52, label: "Abre a noite", act: "go", hot: true },
+      zero: G.seen ? { x: 536, y: note ? 388 : 372, w: 348, h: 40, label: G.arm ? "Mesmo? Ficas sem casa." : "Deitar abaixo", act: "zero", hot: false } : null,
+      pt: { x: 548, y: note ? 468 : 448, w: 130, h: 22, label: "Português", act: "lang", lang: "pt", text: true },
+      en: { x: 690, y: note ? 468 : 448, w: 110, h: 22, label: "English", act: "lang", lang: "en", text: true },
+      quadro: { x: 536, y: note ? 436 : 418, w: 348, h: 24, label: "O quadro", act: "quadro", hot: false, text: true },
     };
   }
   if (G.mode === "quadro") {
@@ -2388,6 +2429,7 @@ addEventListener("keyup", (e) => {
 
 function update(dt) {
   if (G.toastT > 0) G.toastT -= dt;
+  if (G.fineT > 0) G.fineT -= dt;
   if (G.bubble) {
     G.bubble.t -= dt;
     if (G.bubble.t <= 0) G.bubble = null;
@@ -3350,6 +3392,7 @@ function drawStreet() {
   if (IMG.cofre) blit(IMG.cofre, doorX("matos") - G.cam - 10, 450, 78, false);
   const folks = souls().slice().sort((a, b) => a.x - b.x);
   folks.forEach((s) => {
+    if (G.robber && G.robber.t > 0 && s.id === G.robber.id && s.kind === "amb") return;
     const sx = s.x - G.cam;
     if (sx < -80 || sx > 1040) return;
     const idle = Math.sin(G.elapsed * 1.7 + s.x * 0.02);
@@ -3399,6 +3442,12 @@ function drawStreet() {
     blit(IMG[G.haul.who], hx, 470, 236, G.face < 0, 0, 1);
   }
   if (G.phase === "carry") blit(IMG[errand().prop], zx + G.face * 42, 418 - bob * 0.2, 78, false, rot * 0.2, 1);
+  if (G.robber && G.robber.t > 0 && IMG[G.robber.id]) {
+    const rx = zx + G.face * 92;
+    shadow(rx, 456, 28);
+    blit(IMG[G.robber.id], rx, 456, 240, G.face > 0, 0, 1);
+    bubble(rx, 330, "A rua", G.robber.line);
+  }
 }
 
 function drawHud() {
@@ -3436,28 +3485,34 @@ function drawMeters() {
     roundRect(248, y - 10, Math.max(2, 86 * (r[1] / 100)), 8, 2);
     ctx.fill();
   });
-  const stock = Object.keys(GOODS).filter((id) => G.pantry[id] > 0).map((id) => isSour(id) ? tr("queijo podre") : tf("{name} · amanhã vira", { name: food(GOODS[id]) }));
-  if (stock.length) label(stock.join("   "), 360, 518, "12px " + SERIF, stock.some((s) => s.indexOf("podre") >= 0) ? "#e07060" : "#e4c27a", "left");
+  const stockIds = Object.keys(GOODS).filter((id) => G.pantry[id] > 0);
+  const stock = stockIds.map((id) => isSour(id) ? tr("queijo podre") : tf("{name} · amanhã vira", { name: food(GOODS[id]) }));
+  if (stock.length) label(stock.join("   "), 360, 518, "12px " + SERIF, stockIds.some((id) => isSour(id)) ? "#e07060" : "#e4c27a", "left");
 }
 function drawToast() {
-  if (G.toastT <= 0 || !G.toast) return;
-  const msg = tr(G.toast);
-  ctx.font = "16px " + SERIF;
   const stool = G.mode === "stool";
   const avoid = G.mode === "bar" && G.guest;
-  const max = avoid ? 400 : (stool ? 340 : 680);
-  const w = Math.min(max, ctx.measureText(msg).width + 32);
-  const x = (stool || avoid) ? 960 - w - 18 : (960 - w) / 2;
-  const y = stool ? 120 : 56;
-  ctx.globalAlpha = Math.min(1, G.toastT * 2);
-  ctx.fillStyle = "#1a1210";
-  ctx.strokeStyle = "#e4c27a";
-  ctx.lineWidth = 2;
-  roundRect(x, y, w, 32, 8);
-  ctx.fill();
-  ctx.stroke();
-  label(msg, x + w / 2, y + 21, "16px " + SERIF, "#f6efe2", "center");
-  ctx.globalAlpha = 1;
+  const paint = (msg, y, alpha) => {
+    ctx.font = "16px " + SERIF;
+    const max = avoid ? 400 : (stool ? 280 : 680);
+    const w = Math.min(max, ctx.measureText(msg).width + 32);
+    const x = (stool || avoid) ? 960 - w - 18 : (960 - w) / 2;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "#1a1210";
+    ctx.strokeStyle = "#e4c27a";
+    ctx.lineWidth = 2;
+    roundRect(x, y, w, 32, 8);
+    ctx.fill();
+    ctx.stroke();
+    label(msg, x + w / 2, y + 21, "16px " + SERIF, "#f6efe2", "center");
+    ctx.globalAlpha = 1;
+  };
+  let y = stool ? 64 : 56;
+  if (G.toastT > 0 && G.toast) {
+    paint(tr(G.toast), y, Math.min(1, G.toastT * 2));
+    y += 40;
+  }
+  if (G.fineT > 0 && G.fineMsg && G.fineMsg !== G.toast) paint(tr(G.fineMsg), y, Math.min(1, G.fineT * 2));
 }
 function drawFloats() {
   G.floats.forEach((f) => {
@@ -3499,13 +3554,13 @@ function drawTitle() {
   label("A NOITE", 712, 132, "28px " + SERIF, "#e4c27a", "center");
   label("do Zé", 712, 198, "64px " + SERIF, "#f6efe2", "center");
   label(stakeLine(), 712, 246, "16px " + SERIF, "#f6efe2", "center");
+  if (G.best && !G.titleNote) label(tf("Recorde {n} €", { n: G.best }), 712, 268, "13px " + SERIF, "#c4a574", "center");
   if (G.titleNote) {
     ctx.font = "15px " + SERIF;
-    wrap(tr(G.titleNote), 360).slice(0, 3).forEach((ln, i) => label(ln, 712, 300 + i * 18, "15px " + SERIF, "#e4c27a", "center"));
+    wrap(tr(G.titleNote), 360).slice(0, 2).forEach((ln, i) => label(ln, 712, 276 + i * 18, "15px " + SERIF, "#e4c27a", "center"));
   }
-  if (G.best) label(tf("Recorde {n} €", { n: G.best }), 712, 268, "13px " + SERIF, "#c4a574", "center");
   buttons();
-  label("A mão é que sabe. O verde paga.", 712, 484, "13px " + SERIF, "#c4a574", "center");
+  if (!G.titleNote) label("A mão é que sabe. O verde paga.", 712, 496, "13px " + SERIF, "#c4a574", "center");
 }
 function drawCard() {
   if (G.x > 400) drawStreet();
@@ -3534,10 +3589,12 @@ function drawCard() {
   label(tf("No bolso {n} €", { n: G.wallet }), 330, 300, "20px " + SERIF, "#f6efe2", "center");
   label(tf("Deves {n} €", { n: G.debt }), 630, 300, "20px " + SERIF, "#f6efe2", "center");
   if (G.chapter >= 3 && withPrimo().length) label(tf("O {name} anda na casa rosa, todo lampeiro.", { name: CAST[withPrimo()[0]].name }), 480, 332, "16px " + SERIF, "#e4c27a", "center");
-  let extra = "";
-  if (r.missed) extra = tf(r.missed === 1 ? "Ficou {n} cliente à porta, e tu na rua." : "Ficaram {n} à porta, e tu na rua.", { n: r.missed });
-  else if (G.matosPago) extra = tr("O Matos ficou calado.");
-  else if (G.nextQuiet) extra = tr("A próxima noite o Matos fica calado.");
+  const bits = [];
+  if (r.missed) bits.push(tf(r.missed === 1 ? "Ficou {n} cliente à porta, e tu na rua." : "Ficaram {n} à porta, e tu na rua.", { n: r.missed }));
+  if (r.fled) bits.push(tf(r.fled === 1 ? "Foi-se {n}. Nem um copo." : "Foram-se {n}. Nem um copo.", { n: r.fled }));
+  if (!bits.length && G.matosPago) bits.push(tr("O Matos ficou calado."));
+  else if (!bits.length && G.nextQuiet) bits.push(tr("A próxima noite o Matos fica calado."));
+  let extra = bits.join(" ");
   if (G.banner) extra = tr(G.banner);
   if (G.naming) {
     label(tr("Como te tratam no balcão?"), 480, 348, "18px " + SERIF, "#f6efe2", "center");
@@ -3671,8 +3728,12 @@ function drawStool() {
 }
 function drawHaulGlass() {
   const h = G.haul;
-  if (!h || G.mode === "stool") return;
-  const x = 844, y = 62, w = 26, hgt = 62;
+  if (!h || h.landed) return;
+  const stool = G.mode === "stool";
+  const x = stool ? 860 : 844;
+  const y = stool ? 188 : 62;
+  const w = stool ? 36 : 26;
+  const hgt = stool ? 92 : 62;
   ctx.fillStyle = "rgba(16,10,14,0.82)";
   roundRect(x - 8, y - 6, w + 16, hgt + 16, 6);
   ctx.fill();
@@ -3708,7 +3769,7 @@ function render() {
   else if (G.mode === "quadro") drawQuadro();
   else if (G.mode === "card") drawCard();
   else if (G.mode === "street") { drawStreet(); vignette(); drawHud(); drawHaulGlass(); drawMeters(); drawToast(); drawFloats(); buttons(); }
-  else if (G.mode === "stool") { drawStool(); vignette(); drawHud(); drawToast(); drawFloats(); buttons(); }
+  else if (G.mode === "stool") { drawStool(); vignette(); drawHud(); drawHaulGlass(); drawToast(); drawFloats(); buttons(); }
   else { drawBar(); vignette(); drawHud(); drawMeters(); drawToast(); drawFloats(); buttons(); }
 }
 
