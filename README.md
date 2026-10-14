@@ -1,6 +1,6 @@
-# A Noite do Zé
+# Tasca do Abílio
 
-Uma noite no Pica-Pau. Um ficheiro, sem bibliotecas. O jogo grava sozinho no browser.
+Uma noite na Tasca do Abílio. Um ficheiro, sem bibliotecas. O jogo grava sozinho no browser.
 
 ## Jogar
 

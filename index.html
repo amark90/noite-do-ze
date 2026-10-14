@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>A Noite do Zé</title>
-<meta name="description" content="Serve a tasca, corre a rua, paga ao Matos. Uma noite de cada vez, no browser.">
+<title>Tasca do Abílio</title>
+<meta name="description" content="Tasca do Abílio. Serve, corre a rua, paga ao Matos. Uma noite de cada vez, no browser.">
 <style>
   html, body { margin: 0; height: 100%; background: #100c0a; }
   body { display: grid; place-items: center; overflow: hidden; user-select: none; }
@@ -12,7 +12,7 @@
 </style>
 </head>
 <body>
-<canvas id="c" data-build="noite" width="1920" height="1080"></canvas>
+<canvas id="c" data-build="noite" width="1920" height="1080" tabindex="0"></canvas>
 <!--
   Monetização, sem servidor:
   window.TASCA_HOST = {
@@ -159,7 +159,7 @@ const ERRANDS = [
   { giver: "albertina", recv: "hilario", place: "junta", pay: 45, prop: "faixa",
     knock: "A Albertina está à porta, com cara de recado.",
     give: "Leva-me a faixa ao Hilário. A Junta gosta de fitas.",
-    recvLine: "A faixa. O dinheiro, esse, bebe-se no Pica-Pau.",
+    recvLine: "A faixa. O dinheiro, esse, bebe-se na Tasca do Abílio.",
     hud: "A faixa vai ao Hilário." },
   { giver: "padre", recv: "cabo", place: "jenierre", pay: 30, prop: "santo",
     knock: "O padre está à porta. Traz um santo, não um copo.",
@@ -169,11 +169,11 @@ const ERRANDS = [
   { giver: "zeca", recv: "manel", place: "feira", pay: 40, prop: "caixa",
     knock: "O Zeca está à porta, a cheirar a presunto.",
     give: "O presunto está com o Manel. A feira fecha, o homem não.",
-    recvLine: "Toma. O dinheiro conta-se no Pica-Pau, não aqui.",
+    recvLine: "Toma. O dinheiro conta-se na Tasca do Abílio, não aqui.",
     hud: "O presunto vai ao Manel." },
 ];
 const PLACES = [
-  { id: "tasca", x: 40, sign: "O PICA-PAU", wall: "#8d4034", door: "#3a2018", trim: "#e4c27a" },
+  { id: "tasca", x: 40, sign: "TASCA DO ABÍLIO", wall: "#8d4034", door: "#3a2018", trim: "#e4c27a" },
   { id: "garagem", x: 460, sign: "GARAGEM", wall: "#6e675e", door: "#2a2826", trim: "#c4b8a4" },
   { id: "junta", x: 880, sign: "JUNTA", wall: "#efe6d6", door: "#f7f4ee", trim: "#8d4034" },
   { id: "feira", x: 1300, sign: "FEIRA", wall: "#c4844a", door: "#5c3018", trim: "#f4efe6", awning: true },
@@ -333,7 +333,7 @@ const EN = {
   "Baixa o volume. A esquadra ouve.": "Lower it. The station can hear.",
   "A Albertina está à porta.": "Albertina is at the door.",
   "Leva a faixa ao Hilário, na Junta.": "Take the sash to Hilário, at the council.",
-  "A faixa. O dinheiro é no Pica-Pau.": "The sash. The money is at the Pica-Pau.",
+  "A faixa. O dinheiro é na Tasca do Abílio.": "The sash. The money is at the Tasca do Abílio.",
   "Leva a faixa à Junta.": "Take the sash to the council.",
   "O padre está à porta.": "The priest is at the door.",
   "Leva o santo à Jénierre. Porta verde.": "Take the saint to the Jénierre. Green door.",
@@ -343,7 +343,7 @@ const EN = {
   "O presunto está com o Manel, na feira.": "The ham is with Manel, at the market.",
   "Aqui está. Pagam-te na tasca.": "Here. They pay you at the tasca.",
   "Vai à feira buscar o presunto.": "Go to the market for the ham.",
-  "Na danceteria dança-se. No Pica-Pau espera-se.": "At the dance hall they dance. At the Pica-Pau you wait.",
+  "Na danceteria dança-se. Na Tasca do Abílio espera-se.": "At the dance hall they dance. At the Tasca do Abílio you wait.",
   "Hoje não levo juros. A dívida fica.": "No interest today. The debt stays.",
   "GARAGEM": "GARAGE",
   "JUNTA": "COUNCIL",
@@ -404,7 +404,7 @@ const EN = {
   "A dívida ainda está de pé.": "The debt is still standing.",
   "Esta sala pagou-a a tasca.": "The tasca paid for this room.",
   "A sala esta noite está cheia.": "The room is full tonight.",
-  "Põe tremoços.": "Bring some tremoços.",
+  "Põe tremoços.": "Bring some lupin beans.",
   "{who} viu a mão dele ir. Volta contigo. O copo torto não se cobra.": "{who} saw his hand go. Comes back with you. A crooked glass isn't charged.",
   "A mão foi. O copo torto não se cobra.": "The hand went. A crooked glass isn't charged.",
   "Serviu certo. Pagaste {pay} €. {who} fica.": "He poured it right. You paid {pay} €. {who} stays.",
@@ -449,7 +449,7 @@ const EN = {
   "Não há {name}. Vai à feira.": "No {name}. Go to the market.",
   "Fala com {name}.": "Talk to {name}.",
   "São {pay} € na volta.": "{pay} € when you get back.",
-  "Volta ao Pica-Pau. {pay} €.": "Back to the Pica-Pau. {pay} €.",
+  "Volta à Tasca do Abílio. {pay} €.": "Back to the Tasca do Abílio. {pay} €.",
   "Tens {name}. Serve, antes que azede.": "You have {name}. Serve it before it turns.",
   "Entra. São {pay} €.": "Come in. That's {pay} €.",
   "Ainda vais a tempo. {pay} €.": "You can still make it. {pay} €.",
@@ -470,7 +470,7 @@ const EN = {
   "{name} ainda anda na danceteria.": "{name} is still at the dance hall.",
   "Na rua perdeu-se {n} cliente.": "On the street you lost {n} customer.",
   "Na rua perderam-se {n} clientes.": "On the street you lost {n} customers.",
-  "{name} ouviu a noite. Voltou para o Pica-Pau.": "{name} heard the night. Came back to the Pica-Pau.",
+  "{name} ouviu a noite. Voltou para a Tasca do Abílio.": "{name} heard the night. Came back to the Tasca do Abílio.",
   "A dívida fechou. O primo abriu a danceteria, e levou gente tua.": "The debt closed. The cousin opened the dance hall, and took your people.",
   "A dívida fechou.": "The debt closed.",
   "Abateste {n} €.": "You paid off {n} €.",
@@ -496,9 +496,9 @@ const EN = {
   "{name}, anda.": "{name}, come on.",
   "{name} vem contigo.": "{name} is coming with you.",
   "O copo assentou. Pagaste {pay} €. {name} fica.": "The glass settled. You paid {pay} €. {name} stays.",
-  "{name} passou a porta do Pica-Pau. O copo ficou a meio.": "{name} made the Pica-Pau door. The glass was left half full.",
-  "Traz {name} ao Pica-Pau antes de o copo assentar.": "Bring {name} to the Pica-Pau before the glass settles.",
-  "{name} vem contigo. A porta do Pica-Pau.": "{name} is with you. The Pica-Pau door.",
+  "{name} passou a porta da Tasca do Abílio. O copo ficou a meio.": "{name} made the Tasca do Abílio door. The glass was left half full.",
+  "Traz {name} à Tasca do Abílio antes de o copo assentar.": "Bring {name} to the Tasca do Abílio before the glass settles.",
+  "{name} vem contigo. A porta da Tasca do Abílio.": "{name} is with you. The Tasca do Abílio door.",
   "{name} está na danceteria. Vai buscar.": "{name} is at the dance hall. Go and fetch them.",
   "O Matos emprestou a sorrir. A noite é que lhe paga o sorriso.": "Matos lent it with a smile. The night pays for that smile.",
   "Pagaste ao Matos. A Junta, essa, lembrou-se de ti.": "You paid Matos. The council, now, remembered you.",
@@ -520,7 +520,7 @@ const EN = {
   "Os tremoços estão no ponto. Tu é que estás uma pintura.": "The lupins are just right. You're the one who's a picture.",
   "A Albertina está à porta, com cara de recado.": "Albertina's at the door, with an errand on her face.",
   "Leva-me a faixa ao Hilário. A Junta gosta de fitas.": "Take my sash to Hilário. The council loves a ribbon.",
-  "A faixa. O dinheiro, esse, bebe-se no Pica-Pau.": "The sash. The money drinks at the Pica-Pau.",
+  "A faixa. O dinheiro, esse, bebe-se na Tasca do Abílio.": "The sash. The money drinks at the Tasca do Abílio.",
   "A faixa vai ao Hilário.": "The sash goes to Hilário.",
   "O santo vai à Jénierre.": "The saint goes to the Jénierre.",
   "O presunto vai ao Manel.": "The ham goes to Manel.",
@@ -531,21 +531,21 @@ const EN = {
   "O santo vai à Jénierre. Não o percas.": "The saint goes to the Jénierre. Don't you lose him.",
   "O Zeca está à porta, a cheirar a presunto.": "Zeca's at the door, smelling of ham.",
   "O presunto está com o Manel. A feira fecha, o homem não.": "The ham is with Manel. The market closes. He doesn't.",
-  "Toma. O dinheiro conta-se no Pica-Pau, não aqui.": "Here. The money's counted at the Pica-Pau, not here.",
+  "Toma. O dinheiro conta-se na Tasca do Abílio, não aqui.": "Here. The money's counted at the Tasca do Abílio, not here.",
   "O presunto está na feira. Vai antes que o Manel o prove.": "The ham's at the market. Go before Manel tastes it.",
-  "Na danceteria faz-se de fino. No Pica-Pau ainda se pede um copo.": "At the dance hall they play fancy. At the Pica-Pau you still ask for a glass.",
+  "Na danceteria faz-se de fino. Na Tasca do Abílio ainda se pede um copo.": "At the dance hall they play fancy. At the Tasca do Abílio you still ask for a glass.",
   "Não está cá ninguém. Só o primo e a placa.": "Nobody's here. Just the cousin and the sign.",
   "Olha a mão dele, {name}. O copo sobe sem pedir licença.": "Watch his hand, {name}. The glass rises without asking.",
   "{name} vem agarrado.": "{name} is hanging on.",
   "Acabou-lhe o copo. Pagaste {pay} €. O {name} ficou-lhe.": "He finished the glass. You paid {pay} €. {name} stayed with him.",
-  "{name} entrou no Pica-Pau. O primo ficou com o copo a meio.": "{name} got into the Pica-Pau. The cousin was left with a half glass.",
+  "{name} entrou na Tasca do Abílio. O primo ficou com o copo a meio.": "{name} got into the Tasca do Abílio. The cousin was left with a half glass.",
   "{name} vem contigo. Não pares.": "{name} is with you. Don't stop.",
   "{name}. O primo está a encher-lhe o copo.": "{name}. The cousin is filling their glass.",
   "Na feira está o {name}, a {cost} €. Amanhã já não presta.": "The {name} is at the market, {cost} €. By morning it's no good.",
   "Não há {name}. A feira é que o tem.": "No {name}. The market's got it.",
   "{name} está aí. Ouve lá.": "{name} is right there. Listen.",
   "Na volta são {pay} €.": "On the way back, that's {pay} €.",
-  "Volta ao Pica-Pau. Levam-te {pay} €.": "Back to the Pica-Pau. They'll give you {pay} €.",
+  "Volta à Tasca do Abílio. Levam-te {pay} €.": "Back to the Tasca do Abílio. They'll give you {pay} €.",
   "{name} anda na danceteria, todo lampeiro.": "{name} is at the dance hall, playing the swell.",
   "A rua é conversa. O balcão é que come.": "The street is talk. The counter is what eats.",
   "Este veio pela língua, não pelo copo.": "This one came for the talk, not the glass.",
@@ -608,7 +608,7 @@ const EN = {
   "Sem dinheiro, nem um tremoço.": "No money, not even a lupin.",
   "Foi-se. Nem deu uma palavra.": "Gone. Didn't even give a word.",
   "Foi-se. A porta é larga.": "Gone. The door is wide.",
-  "{name} ouviu a casa. Voltou para o Pica-Pau.": "{name} heard the house. Came back to the Pica-Pau.",
+  "{name} ouviu a casa. Voltou para a Tasca do Abílio.": "{name} heard the house. Came back to the Tasca do Abílio.",
   "A dívida fechou. A casa respira.": "The debt closed. The house breathes.",
   "Abateste {n} €. O Matos fez cara.": "You knocked off {n} €. Matos pulled a face.",
   "Põe o {name}": "Put the {name}",
@@ -632,8 +632,8 @@ const EN = {
   "A faca viu-o primeiro. Ficaste com o que levavas.": "The knife saw him first. You kept what you were carrying.",
   "A rua levou {n} €. A porta verde ouve queixas.": "The street took {n} €. The green door hears complaints.",
   "Levaram o recado. Sem isso, a volta não paga.": "They took the errand. Without it, the way back doesn't pay.",
-  "O cabo ficou com a faca e o Matos apontou o resto.": "The cabo kept the knife and Matos wrote down the rest.",
-  "O cabo ficou com a faca. São vinte euros.": "The cabo kept the knife. That's twenty euros.",
+  "O cabo ficou com a faca e o Matos apontou o resto.": "Cabo kept the knife and Matos wrote down the rest.",
+  "O cabo ficou com a faca. São vinte euros.": "Cabo kept the knife. That's twenty euros.",
   "O cabo da faca viu-se. Ficas sem ela, e sem os vinte.": "The knife's handle showed. You lose it, and the twenty.",
   "Fica escrito. Desta vez devolvo. O Matos também lê.": "It's written down. This time I give it back. Matos reads it too.",
   "Outra vez, Zé. O Matos já fechou o livro.": "Again, Zé. Matos has already closed the book.",
@@ -678,9 +678,9 @@ const EN = {
   "Faltavam {n} €. A faca fica no bolso e no livro.": "{n} € short. The knife stays in the pocket and in the book.",
   "O Matos fechou o livro. Hoje não escreve.": "Matos closed the book. Today he doesn't write.",
   "O Matos fechou o livro. A faca fica na gaveta.": "Matos closed the book. The knife stays in the drawer.",
-  "O cabo ficou com a faca. Desta, o Matos nem olhou.": "The cabo kept the knife. This time Matos didn't even look.",
+  "O cabo ficou com a faca. Desta, o Matos nem olhou.": "Cabo kept the knife. This time Matos didn't even look.",
   "Quinze, Zé. O que faltar, o Matos escreve.": "Fifteen, Zé. What you haven't got, Matos writes down.",
-  "Na casa rosa gasta-se. No Pica-Pau ainda se pede um copo.": "At the pink house you spend. At the Pica-Pau you still ask for a glass.",
+  "Na casa rosa gasta-se. Na Tasca do Abílio ainda se pede um copo.": "At the pink house you spend. At the Tasca do Abílio you still ask for a glass.",
   "O {name} anda na casa rosa, todo lampeiro.": "{name} is at the pink house, playing the swell.",
   "O quadro": "The board",
   "Volta.": "Back.",
@@ -690,6 +690,32 @@ const EN = {
   "O livro não abre.": "The book won't open.",
   "Quem fechou a casa.": "Who closed the house.",
   "Noite {n}": "Night {n}",
+  "Zé, deves {debt} € ao homem. O verde paga.": "Zé, you owe the man {debt} €. The green pays.",
+  "A casa é tua. O verde paga.": "The house is yours. The green pays.",
+  "O nome escreve-se quando a casa for tua.": "The name is written when the house is yours.",
+  "Vai pró caralho": "Piss off.",
+  "CASA ROSA": "PINK HOUSE",
+  "NÃO FIADO": "NO CREDIT",
+  "REVISTA": "WEEKLY",
+  "CARTA": "MENU",
+  "TASCA": "TASCA",
+  "do Abílio": "do Abílio",
+  "SR. MATOS": "MR. MATOS",
+  "Sr. Matos": "Mr. Matos",
+  "Noite {n} na Tasca do Abílio: {servidos} € servidos, o Matos levou {juros} €.": "Night {n} at Tasca do Abílio: {servidos} € served, Matos took {juros} €.",
+  "Dívida": "Debt",
+  "Casa aberta": "Open house",
+  "O primo à espreita": "The cousin is watching",
+  "Gente a meio": "People halfway",
+  "Nome na rua": "A name on the street",
+  "A tasca da terra": "The village tasca",
+  "Estranho": "Stranger",
+  "Cara conhecida": "A known face",
+  "Da casa": "Of the house",
+  "Quem manda na mesa": "Who runs the table",
+  "Calma": "Calm",
+  "Aperta": "Tight",
+  "Guerra": "War",
 };
 function tr(s) {
   if (s == null || s === "" || LANG !== "en") return s;
@@ -713,13 +739,20 @@ function loadLang() {
     v = n.indexOf("pt") === 0 ? "pt" : "en";
   }
   LANG = v;
-  document.documentElement.lang = v === "en" ? "en" : "pt";
+  applyLang();
+}
+function applyLang() {
+  document.documentElement.lang = LANG === "en" ? "en" : "pt";
+  const d = document.querySelector('meta[name="description"]');
+  if (d) d.setAttribute("content", LANG === "en"
+    ? "Tasca do Abílio. Run the tasca, walk the street, pay Matos. One night at a time, in the browser."
+    : "Tasca do Abílio. Serve, corre a rua, paga ao Matos. Uma noite de cada vez, no browser.");
 }
 function setLang(v) {
   if (v !== "pt" && v !== "en") return;
   LANG = v;
   try { localStorage.setItem("tasca-lang", v); } catch (e) {}
-  document.documentElement.lang = v === "en" ? "en" : "pt";
+  applyLang();
 }
 
 var G = {
@@ -845,7 +878,7 @@ function primoLine(id) {
   if (id === "zeca") return "Na casa rosa. O presunto, esse, ficou na feira.";
   if (id === "albertina") return "Na casa rosa. Guarda-me na mesma um tremoço.";
   if (id === "padre") return "Na casa rosa. Deus vê o copo, e a porta.";
-  return "Na casa rosa gasta-se. No Pica-Pau ainda se pede um copo.";
+  return "Na casa rosa gasta-se. Na Tasca do Abílio ainda se pede um copo.";
 }
 function errandMouth() {
   return ERRAND_MOUTH[Math.max(0, Math.min(3, G.chapter))] || ERRAND_MOUTH[0];
@@ -1002,7 +1035,13 @@ function portalHouse() {
 function supportUrl() {
   if (portalHouse()) return "";
   const h = window.TASCA_HOST || {};
-  return String(h.supportUrl || "").trim();
+  const s = String(h.supportUrl || "").trim();
+  if (!/^https?:\/\//i.test(s)) return "";
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+    return u.href;
+  } catch (e) { return ""; }
 }
 function hasRewarded() {
   const s = sdk();
@@ -1187,12 +1226,14 @@ function noteWin() {
   }
   G.naming = true;
   G.nameBuf = "";
+  const c = document.getElementById("c");
+  if (c && c.focus) c.focus();
 }
 function commitName() {
   const name = cleanName(G.nameBuf);
+  if (!name) return;
   G.naming = false;
   G.nameBuf = "";
-  if (!name) return;
   const nights = (G.report && G.report.night) || Math.max(1, G.night - 1);
   pushBoard(name, nights, G.wallet);
   G.mode = "quadro";
@@ -1316,7 +1357,7 @@ function buyMatos() {
 function copyResult() {
   const r = G.report;
   if (!r) return;
-  const text = "Noite " + r.night + " na tasca do Zé: " + r.noite + " € servidos, o Matos levou " + r.juros + " €.";
+  const text = tf("Noite {n} na Tasca do Abílio: {servidos} € servidos, o Matos levou {juros} €.", { n: r.night, servidos: r.noite, juros: r.juros });
   const ok = () => { G.banner = "Copiado."; };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(ok, () => { G.banner = text; });
@@ -1380,11 +1421,15 @@ function startNight() {
   });
   const j = juros();
   const bits = [];
+  bits.push(j ? tf("Quando isto fechar, o Matos leva {j} €. Sorri enquanto serves.", { j: j }) : tr("Esta noite o Matos fica à porta, de mãos a abanar."));
   if (aged.soured.length) bits.push(tr("O queijo azedou. Ainda se serve. Quem o comer que se agarre."));
   aged.lost.forEach((id) => bits.push(tr(GOODS[id].spoil)));
-  bits.push(j ? tf("Quando isto fechar, o Matos leva {j} €. Sorri enquanto serves.", { j: j }) : tr("Esta noite o Matos fica à porta, de mãos a abanar."));
-  G.toast = bits.join(" ");
-  G.toastT = 3.6;
+  G.toast = bits[0];
+  G.toastT = 4.6;
+  if (bits.length > 1) {
+    G.fineMsg = bits.slice(1).join(" ");
+    G.fineT = 4.6;
+  }
   save();
   portalStart();
 }
@@ -1470,7 +1515,7 @@ function endNight(opts) {
       : "O livro acabou. Como-te o cu e corto-te os tomates.";
   } else if ((G.perfects || 0) >= 6) {
     const back = poachOne();
-    if (back) G.banner = tf("{name} ouviu a casa. Voltou para o Pica-Pau.", { name: CAST[back].name });
+    if (back) G.banner = tf("{name} ouviu a casa. Voltou para a Tasca do Abílio.", { name: CAST[back].name });
   }
   G.cardT = 0;
   G.holding = false;
@@ -1478,6 +1523,7 @@ function endNight(opts) {
   save();
   chime();
   nightBreak();
+  if (!took && G.chapter >= 3 && G.debt <= 0 && !loadWho()) noteWin();
 }
 function payDebt() {
   if (G.mode !== "card") return;
@@ -1491,11 +1537,12 @@ function payDebt() {
     G.chapter += 1;
     G.debt = CHAPTERS[G.chapter].debt;
     G.banner = CHAPTERS[G.chapter].line;
-    if (won && G.debt <= 0) noteWin();
+    if (won && G.debt <= 0 && !loadWho()) noteWin();
   } else if (G.debt <= 0) {
     const fresh = G.chapter >= 3 && !G.twist;
     ensureFolk();
     G.banner = fresh ? "A casa rosa é tua. A dívida, essa, calou-se." : "A dívida fechou. A casa respira.";
+    if (G.chapter >= 3 && !loadWho()) noteWin();
   } else {
     G.banner = tf("Abateste {n} €. O Matos fez cara.", { n: n });
   }
@@ -2123,13 +2170,17 @@ function winHaul() {
   if (!h || !h.took || h.landed) return;
   h.landed = true;
   if (h.who) G.folk[h.who] = "ze";
-  G.toast = tf("{name} entrou no Pica-Pau. O primo ficou com o copo a meio.", { name: CAST[h.who].name });
+  G.toast = tf("{name} entrou na Tasca do Abílio. O primo ficou com o copo a meio.", { name: CAST[h.who].name });
   G.toastT = 3.4;
   G.stool = null;
   G.haul = null;
   save();
 }
 
+function firstMouth() {
+  if (G.debt > 0) return tf("Zé, deves {debt} € ao homem. O verde paga.", { debt: G.debt });
+  return "A casa é tua. O verde paga.";
+}
 function objective() {
   const e = errand();
   if (G.mode === "stool") {
@@ -2142,15 +2193,15 @@ function objective() {
     return tf("Não há {name}. A feira é que o tem.", { name: food(g) });
   }
   if (G.mode === "bar" && G.guest && !G.guest.good && !G.guest.chat && !G.guest.stool && G.phase !== "knock" && G.phase !== "carry" && G.phase !== "drop") {
-    if (!G.servedOnce) return "A mão é que sabe. O verde paga.";
+    if (!G.servedOnce) return firstMouth();
     return "Enche, Zé. A noite não se serve sozinha.";
   }
   if (G.mode === "street") {
     if (G.phase === "knock") return tf("{name} está aí. Ouve lá.", { name: CAST[e.giver].name });
     if (G.phase === "carry") return tr(e.hud) + " " + tf("Na volta são {pay} €.", { pay: e.pay });
-    if (G.phase === "drop") return tf("Volta ao Pica-Pau. Levam-te {pay} €.", { pay: e.pay });
+    if (G.phase === "drop") return tf("Volta à Tasca do Abílio. Levam-te {pay} €.", { pay: e.pay });
     if (nearDisco()) return G.houseNight === G.night ? "Esta noite a casa rosa já te viu." : "A casa rosa. Quinze, se os tiveres.";
-    if (G.chapter >= 3 && heat()) return tf("{name} anda na casa rosa, todo lampeiro.", { name: CAST[withPrimo()[0]].name });
+    if (G.chapter >= 3 && heat()) return tf("O {name} anda na casa rosa, todo lampeiro.", { name: CAST[withPrimo()[0]].name });
     return "A rua é conversa. O balcão é que come.";
   }
   if (G.guest && G.guest.chat) return "Este veio pela língua, não pelo copo.";
@@ -2164,8 +2215,8 @@ function objective() {
   if (G.phase === "carry") return tf("Ainda vais a tempo. Na volta são {pay} €.", { pay: e.pay });
   if (G.phase === "knock") return tf("{name} está à porta, com um recado.", { name: CAST[e.giver].name });
   if (G.guest && G.guest.nag >= 2) return "Já chega. A porta é essa.";
-  if (!G.servedOnce) return "A mão é que sabe. O verde paga.";
-  if (G.chapter >= 3 && heat()) return tf("{name} anda na casa rosa, todo lampeiro.", { name: CAST[withPrimo()[0]].name });
+  if (!G.servedOnce) return firstMouth();
+  if (G.chapter >= 3 && heat()) return tf("O {name} anda na casa rosa, todo lampeiro.", { name: CAST[withPrimo()[0]].name });
   return "Enche, Zé. A noite não se serve sozinha.";
 }
 function targetPlace() {
@@ -2242,7 +2293,7 @@ function ui() {
     const offer = !G.matosPago && !G.nextQuiet;
     return {
       pay: (G.wallet > 0 && G.debt > 0) ? { x: 188, y: 400, w: 250, h: 46, label: "Pagar ao Matos", act: "pay", hot: false } : null,
-      buy: (offer && (hasRewarded() || !portalHouse())) ? { x: (G.wallet > 0 && G.debt > 0) ? 456 : 320, y: 400, w: 320, h: 46, label: hasRewarded() ? "Amanhã o Matos cala-se" : "Cala o Matos · 2 €", act: hasRewarded() ? "reward" : "buy", hot: false } : null,
+      buy: (offer && (hasRewarded() || supportUrl())) ? { x: (G.wallet > 0 && G.debt > 0) ? 456 : 320, y: 400, w: 320, h: 46, label: hasRewarded() ? "Amanhã o Matos cala-se" : "Cala o Matos · 2 €", act: hasRewarded() ? "reward" : "buy", hot: false } : null,
       go: { x: 280, y: 458, w: 400, h: 52, label: G.shut ? "Ficou assim." : "Outra, vá", act: "go", hot: true },
       copy: { x: 688, y: 34, w: 100, h: 22, label: "Copiar", act: "copy", hot: false, text: true },
     };
@@ -2264,6 +2315,7 @@ function doAct(act, r) {
   }
   if (act === "shop" || act === "ahead") { buyGood(r && r.good); return; }
   if (act === "go") {
+    if (G.naming) return;
     if (G.shut) {
       resetGame();
       G.mode = "title";
@@ -2285,7 +2337,11 @@ function doAct(act, r) {
   }
   if (act === "pay") { payDebt(); return; }
   if (act === "quadro") { G.mode = "quadro"; pullBoard(); return; }
-  if (act === "title") { G.naming = false; G.mode = "title"; return; }
+  if (act === "title") {
+    if (G.naming) return;
+    G.mode = "title";
+    return;
+  }
   if (act === "name") { commitName(); return; }
   if (act === "buy") { buyMatos(); return; }
   if (act === "reward") { askQuiet(); return; }
@@ -2385,7 +2441,7 @@ addEventListener("keydown", (e) => {
       G.nameBuf = (G.nameBuf || "").slice(0, -1);
       return;
     }
-    if (e.key === "Escape") { G.naming = false; G.nameBuf = ""; return; }
+    if (e.key === "Escape") { e.preventDefault(); return; }
     if (!e.repeat && e.key && e.key.length === 1 && !e.metaKey && !e.ctrlKey && (G.nameBuf || "").length < 16) {
       if (!(e.key === " " && !G.nameBuf)) G.nameBuf += e.key;
       e.preventDefault();
@@ -2803,6 +2859,12 @@ function drawRoom() {
     ctx.globalAlpha = Math.min(1, (m - 0.48) / 0.3);
     blit(IMG.revista, 102, 214, 156, false);
     ctx.globalAlpha = 1;
+    if (LANG === "en") {
+      ctx.fillStyle = "#6e2430";
+      roundRect(64, 84, 76, 16, 2);
+      ctx.fill();
+      label("WEEKLY", 102, 96, "bold 11px " + SERIF, "#f6efe2", "center");
+    }
   }
   if (IMG.quadro) {
     const h = 108;
@@ -2879,8 +2941,8 @@ function drawFancyWall(k) {
 }
 function drawMoodSign() {
   const m = houseMood();
-  if (m > 0.62 && IMG.naofiado) { blit(IMG.naofiado, 250, 508, 108, false); return; }
-  if (m < 0.38 && IMG.carta) { blit(IMG.carta, 280, 512, 118, false); return; }
+  if (LANG !== "en" && m > 0.62 && IMG.naofiado) { blit(IMG.naofiado, 250, 508, 108, false); return; }
+  if (LANG !== "en" && m < 0.38 && IMG.carta) { blit(IMG.carta, 280, 512, 118, false); return; }
   if (m > 0.62) {
     ctx.fillStyle = "#1a1210";
     roundRect(248, 404, 130, 32, 4);
@@ -3551,8 +3613,8 @@ function drawTitle() {
   ctx.fill();
   ctx.stroke();
   label(tr(chapter().title).toUpperCase(), 712, 84, "14px " + SERIF, "#e4c27a", "center");
-  label("A NOITE", 712, 132, "28px " + SERIF, "#e4c27a", "center");
-  label("do Zé", 712, 198, "64px " + SERIF, "#f6efe2", "center");
+  label("TASCA", 712, 124, "26px " + SERIF, "#e4c27a", "center");
+  label("do Abílio", 712, 186, "52px " + SERIF, "#f6efe2", "center");
   label(stakeLine(), 712, 246, "16px " + SERIF, "#f6efe2", "center");
   if (G.best && !G.titleNote) label(tf("Recorde {n} €", { n: G.best }), 712, 268, "13px " + SERIF, "#c4a574", "center");
   if (G.titleNote) {
@@ -3588,8 +3650,9 @@ function drawCard() {
   col("Matos", r.juros + " €", 660);
   label(tf("No bolso {n} €", { n: G.wallet }), 330, 300, "20px " + SERIF, "#f6efe2", "center");
   label(tf("Deves {n} €", { n: G.debt }), 630, 300, "20px " + SERIF, "#f6efe2", "center");
-  if (G.chapter >= 3 && withPrimo().length) label(tf("O {name} anda na casa rosa, todo lampeiro.", { name: CAST[withPrimo()[0]].name }), 480, 332, "16px " + SERIF, "#e4c27a", "center");
+  if (!G.naming && G.chapter >= 3 && withPrimo().length) label(tf("O {name} anda na casa rosa, todo lampeiro.", { name: CAST[withPrimo()[0]].name }), 480, 332, "16px " + SERIF, "#e4c27a", "center");
   const bits = [];
+  if (r.juros > 0) bits.push(tf("São {j} €, Zé. Não te escondas atrás do balcão.", { j: r.juros }));
   if (r.missed) bits.push(tf(r.missed === 1 ? "Ficou {n} cliente à porta, e tu na rua." : "Ficaram {n} à porta, e tu na rua.", { n: r.missed }));
   if (r.fled) bits.push(tf(r.fled === 1 ? "Foi-se {n}. Nem um copo." : "Foram-se {n}. Nem um copo.", { n: r.fled }));
   if (!bits.length && G.matosPago) bits.push(tr("O Matos ficou calado."));
@@ -3620,7 +3683,8 @@ function drawQuadro() {
   label(tr("Quem fechou a casa."), 480, 72, "22px " + SERIF, "#e4c27a", "center");
   const rows = shownBoard().rows;
   if (!rows.length) {
-    label(tr(G.sheet && G.sheet.fechado ? "O livro não abre." : "Ainda não há nome na casa."), 480, 260, "18px " + SERIF, "#f6efe2", "center");
+    label(tr(G.sheet && G.sheet.fechado ? "O livro não abre." : "Ainda não há nome na casa."), 480, 248, "18px " + SERIF, "#f6efe2", "center");
+    label(tr("O nome escreve-se quando a casa for tua."), 480, 280, "16px " + SERIF, "#e4c27a", "center");
   } else {
     if (G.sheet && G.sheet.fechado) label(tr("O livro não abre."), 480, 98, "15px " + SERIF, "#e07060", "center");
     rows.forEach((r, i) => {
